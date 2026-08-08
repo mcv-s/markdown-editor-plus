@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Markdown Editor</title>
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="preview.css">
+    <link rel="manifest" href="manifest.json">
+
+    <meta name="theme-color" content="#1e1e1e">
+</head>
+
+<body>
+
+    <header class="toolbar">
+
+        <div class="app-title">
+            Markdown Editor
+        </div>
+
+        <div class="toolbar-actions">
+            <button id="openFile">Open</button>
+            <button id="saveFile" disabled>Save</button>
+            <button id="saveAsFile" disabled>Save As</button>
+        </div>
+
+        <div id="fileName" class="file-name">
+            No file open
+        </div>
+
+    </header>
+
+    <main class="editor-container">
+
+        <textarea id="editor" spellcheck="false" placeholder="Open a Markdown file or start writing..."></textarea>
+
+        <section id="preview" class="preview" contenteditable="true" spellcheck="true">
+            <div class="empty-preview">
+                Open a Markdown file or start writing...
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="status-bar">
+        <span id="status">Ready</span>
+        <span id="wordCount">0 words</span>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/turndown/dist/turndown.js"></script>
+    <script src="program.js"></script>
+
+</body>
+
+</html>

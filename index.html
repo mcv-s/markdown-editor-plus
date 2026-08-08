@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Markdown Editor</title>
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="index.css">
+    <link rel="manifest" href="manifest.json">
+
+    <meta name="theme-color" content="#1e1e1e">
+
+
+</head>
+
+
+
+
+
+
+<body>
+    <main class="welcome">
+
+
+
+
+
+
+        <div class="welcome-content">
+
+            <h1>Better Markdown Editor</h1>
+
+            <p class="welcome-subtitle">
+                Write, edit, and preview Markdown.
+            </p>
+
+            <div class="welcome-actions">
+
+                <button id="openFile">
+                    Open a file
+                </button>
+
+                <button id="newFile">
+                    Go to editor
+                </button>
+
+            </div>
+
+        </div>
+
+        <script>
+            const openFileButton = document.getElementById("openFile");
+            const newFileButton = document.getElementById("newFile");
+
+            openFileButton.addEventListener("click", async () => {
+                try {
+                    const [handle] = await window.showOpenFilePicker({
+                        multiple: false,
+
+                        types: [
+                            {
+                                description: "Markdown files",
+                                accept: {
+                                    "text/markdown": [".md", ".markdown"]
+                                }
+                            }
+                        ]
+                    });
+
+                    /*
+                     * Store the selected file handle so
+                     * editor.html can load it.
+                     */
+
+                    const dbRequest = indexedDB.open(
+                        "markdown-editor",
+                        1
+                    );
+
+                    dbRequest.onupgradeneeded = () => {
+                        const db = dbRequest.result;
+
+                        if (!db.objectStoreNames.contains("files")) {
+                            db.createObjectStore("files");
+                        }
+                    };
+
+                    dbRequest.onsuccess = () => {
+                        const db = dbRequest.result;
+
+                        const transaction =
+                            db.transaction("files", "readwrite");
+
+                        transaction
+                            .objectStore("files")
+                            .put(handle, "currentFile");
+
+                        transaction.oncomplete = () => {
+                            window.location.href = "editor.html";
+                        };
+                    };
+
+                } catch (error) {
+                    if (error.name !== "AbortError") {
+                        console.error(error);
+                    }
+                }
+            });
+
+
+            newFileButton.addEventListener("click", () => {
+                window.location.href = "editor.html";
+            });
+        </script>
+
+
+
+
+
+
+
+
+
+
+    </main>
+    <script src="program.js"></script>
+
+
+</body>
+
+</html>
