@@ -6,6 +6,7 @@ const editor = document.getElementById("editor");
 const openFileButton = document.getElementById("openFile");
 const saveFileButton = document.getElementById("saveFile");
 const saveAsFileButton = document.getElementById("saveAsFile");
+const openLastFileButton = document.getElementById("openLastFile");
 
 const fileName = document.getElementById("fileName");
 const status = document.getElementById("status");
@@ -14,8 +15,25 @@ const preview = document.getElementById("preview");
 
 const turndown = new TurndownService({
     headingStyle: "atx",
-    bulletListMarker: "-"
+    bulletListMarker: "-",
+    codeBlockStyle: "fenced"
 });
+
+turndown.keep([
+    "br",
+    "div",
+    "span",
+    "iframe",
+    "video",
+    "audio",
+    "details",
+    "summary",
+    "hr"
+]);
+
+turndown.use(
+    turndownPluginGfm.gfm
+);
 
 
 /* -----------------------------
@@ -89,6 +107,40 @@ async function getSavedFileHandle() {
 }
 
 
+
+
+
+async function checkLastFile() {
+    try {
+        const handle =
+            await getSavedFileHandle();
+
+        openLastFileButton.hidden =
+            !handle;
+
+    } catch (error) {
+        console.error(
+            "Could not check for last file:",
+            error
+        );
+
+        openLastFileButton.hidden = true;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* -----------------------------
    Open File
 ----------------------------- */
@@ -148,70 +200,66 @@ async function loadFile(handle) {
 }
 
 
+
+
+
+
 /* -----------------------------
-   Restore Previous File
+   Open Last File
 ----------------------------- */
 
-async function restorePreviousFile() {
+async function openLastFile() {
     try {
-        const handle = await getSavedFileHandle();
+        const handle =
+            await getSavedFileHandle();
 
         if (!handle) {
+            status.textContent =
+                "No previous file";
+
             return;
         }
 
-        const permission = await handle.queryPermission({
-            mode: "readwrite"
-        });
+        let permission =
+            await handle.queryPermission({
+                mode: "readwrite"
+            });
 
-        if (permission === "granted") {
-            await loadFile(handle);
+        if (permission !== "granted") {
+            permission =
+                await handle.requestPermission({
+                    mode: "readwrite"
+                });
+        }
+
+        if (permission !== "granted") {
+            status.textContent =
+                "Permission denied";
+
             return;
         }
 
-        fileName.textContent = handle.name;
-        status.textContent = "Previous file available";
-
-        /*
-         * We can't silently request filesystem permission
-         * during page startup. The user must interact with
-         * the page first.
-         */
-        openFileButton.textContent = "Restore File";
-
-        const restoreHandler = async () => {
-            try {
-                const newPermission =
-                    await handle.requestPermission({
-                        mode: "readwrite"
-                    });
-
-                if (newPermission === "granted") {
-                    await loadFile(handle);
-
-                    openFileButton.textContent = "Open";
-                    openFileButton.removeEventListener(
-                        "click",
-                        restoreHandler
-                    );
-                }
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
-        openFileButton.addEventListener(
-            "click",
-            restoreHandler
-        );
+        await loadFile(handle);
+        openLastFileButton.hidden = true;
 
     } catch (error) {
-        console.error(
-            "Could not restore previous file:",
-            error
-        );
+        console.error(error);
+
+        status.textContent =
+            "Failed to open last file";
     }
 }
+
+
+
+openLastFileButton.addEventListener(
+    "click",
+    openLastFile
+);
+
+
+
+
 
 
 /* -----------------------------
@@ -230,14 +278,27 @@ saveFileButton.addEventListener("click", async () => {
         await writable.write(editor.value);
         await writable.close();
 
+        setDirty(false);
+
         status.textContent = "Saved";
 
     } catch (error) {
         console.error(error);
+
         status.textContent =
             "Failed to save";
     }
 });
+
+
+
+
+
+
+
+
+
+
 
 
 /* -----------------------------
@@ -257,13 +318,13 @@ saveAsFileButton.addEventListener("click", async () => {
                         description: "Markdown files",
 
                         accept: {
-                            "text/markdown": [".md"]
+                            "text/markdown": [
+                                ".md"
+                            ]
                         }
                     }
                 ]
             });
-
-        currentFileHandle = handle;
 
         const writable =
             await handle.createWritable();
@@ -271,12 +332,15 @@ saveAsFileButton.addEventListener("click", async () => {
         await writable.write(editor.value);
         await writable.close();
 
+        currentFileHandle = handle;
+
         await saveFileHandle(handle);
 
         fileName.textContent = handle.name;
 
-        saveFileButton.disabled = false;
         saveAsFileButton.disabled = false;
+
+        setDirty(false);
 
         status.textContent = "Saved";
 
@@ -292,6 +356,12 @@ saveAsFileButton.addEventListener("click", async () => {
 
 
 
+
+
+
+
+/* Dirty checking */
+
 function setDirty(dirty) {
     isDirty = dirty;
 
@@ -301,6 +371,10 @@ function setDirty(dirty) {
         status.textContent = "Modified";
     }
 }
+
+
+
+
 
 
 
@@ -335,6 +409,19 @@ function updateEditor() {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* -----------------------------
    Markdown → HTML
 ----------------------------- */
@@ -362,6 +449,193 @@ function renderMarkdown() {
 
     isUpdating = false;
 }
+
+
+
+
+
+
+
+
+
+
+
+/* -----------------------------
+   Editor Panel Resizing
+----------------------------- */
+
+const editorContainer =
+    document.querySelector(".editor-container");
+
+const editorDivider =
+    document.getElementById("editorDivider");
+
+const togglePanel =
+    document.getElementById("togglePanel");
+
+let isDraggingDivider = false;
+
+let editorPanelWidth = 50;
+
+const COLLAPSE_SIZE = 40;
+
+
+function setPanelWidth(percent) {
+    editorPanelWidth =
+        Math.max(0, Math.min(100, percent));
+
+    if (editorPanelWidth <= 0) {
+        collapseEditor();
+        return;
+    }
+
+    if (editorPanelWidth >= 100) {
+        collapsePreview();
+        return;
+    }
+
+    editorContainer.style.gridTemplateColumns =
+        `calc(${editorPanelWidth}% - 2.5px) 5px calc(${100 - editorPanelWidth}% - 2.5px)`;
+
+    editorDivider.style.display = "block";
+
+    editor.style.display = "";
+    preview.style.display = "";
+
+    togglePanel.hidden = true;
+}
+
+
+function startDividerDrag(event) {
+    event.preventDefault();
+
+    isDraggingDivider = true;
+
+    editorDivider.classList.add("dragging");
+
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    document.addEventListener(
+        "mousemove",
+        moveDivider
+    );
+
+    document.addEventListener(
+        "mouseup",
+        stopDividerDrag
+    );
+}
+
+
+function moveDivider(event) {
+    if (!isDraggingDivider) {
+        return;
+    }
+
+    const rect =
+        editorContainer.getBoundingClientRect();
+
+    const x =
+        event.clientX - rect.left;
+
+    const percent =
+        (x / rect.width) * 100;
+
+    setPanelWidth(percent);
+}
+
+
+function stopDividerDrag() {
+    if (!isDraggingDivider) {
+        return;
+    }
+
+    isDraggingDivider = false;
+
+    editorDivider.classList.remove("dragging");
+
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+
+    document.removeEventListener(
+        "mousemove",
+        moveDivider
+    );
+
+    document.removeEventListener(
+        "mouseup",
+        stopDividerDrag
+    );
+}
+
+
+function collapseEditor() {
+    editorPanelWidth = 0;
+
+    editor.style.display = "none";
+    editorDivider.style.display = "none";
+    preview.style.display = "block";
+
+    editorContainer.style.gridTemplateColumns =
+        "1fr";
+
+    togglePanel.textContent = "Open Raw";
+    togglePanel.hidden = false;
+}
+
+
+function collapsePreview() {
+    editorPanelWidth = 100;
+
+    preview.style.display = "none";
+    editorDivider.style.display = "none";
+    editor.style.display = "block";
+
+    editorContainer.style.gridTemplateColumns =
+        "1fr";
+
+    togglePanel.textContent = "Open Preview";
+    togglePanel.hidden = false;
+}
+
+
+function restoreSplit() {
+    editorPanelWidth = 50;
+
+    editor.style.display = "";
+    preview.style.display = "";
+    editorDivider.style.display = "block";
+
+    editorContainer.style.gridTemplateColumns =
+        "calc(50% - 2.5px) 5px calc(50% - 2.5px)";
+
+    togglePanel.hidden = true;
+}
+
+
+editorDivider.addEventListener(
+    "mousedown",
+    startDividerDrag
+);
+
+
+togglePanel.addEventListener(
+    "click",
+    restoreSplit
+);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /* -----------------------------
@@ -393,6 +667,12 @@ preview.addEventListener("input", () => {
 
 
 
+
+
+
+
+
+
 /* -----------------------------
    Unsaved Changes Warning
 ----------------------------- */
@@ -406,6 +686,7 @@ window.addEventListener("beforeunload", event => {
 
     event.returnValue = "";
 });
+
 
 
 
@@ -436,6 +717,20 @@ function updateWordCount() {
     wordCount.textContent =
         `${words} ${words === 1 ? "word" : "words"}`;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /* -----------------------------
@@ -490,8 +785,7 @@ if ("serviceWorker" in navigator) {
 
 
 
-/* -----------------------------
-   Startup
------------------------------ */
 
-restorePreviousFile();
+
+
+checkLastFile();

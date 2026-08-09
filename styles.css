@@ -85,7 +85,7 @@ button:disabled {
     min-height: 0;
 
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) 5px minmax(0, 1fr);
 }
 
 #editor {
@@ -193,6 +193,42 @@ body::-webkit-scrollbar-corner,
 .preview::-webkit-scrollbar-corner {
     background: transparent;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+.editor-divider {
+    width: 5px;
+    height: 100%;
+
+    background: #3a3a3a;
+
+    cursor: col-resize;
+
+    user-select: none;
+    touch-action: none;
+}
+
+.editor-divider:hover {
+    background: #555;
+}
+
+.editor-divider.dragging {
+    background: #666;
+}
+
+
+
+
 
 
 

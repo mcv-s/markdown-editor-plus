@@ -23,9 +23,12 @@
         </div>
 
         <div class="toolbar-actions">
+            <button id="openLastFile"> Open Last File </button>
             <button id="openFile">Open</button>
             <button id="saveFile" disabled>Save</button>
             <button id="saveAsFile" disabled>Save As</button>
+            
+            <button id="togglePanel" hidden></button>
         </div>
 
         <div id="fileName" class="file-name">
@@ -37,6 +40,8 @@
     <main class="editor-container">
 
         <textarea id="editor" spellcheck="false" placeholder="Open a Markdown file or start writing..."></textarea>
+
+        <div id="editorDivider" class="editor-divider" aria-label="Resize editor panels"></div>
 
         <section id="preview" class="preview" contenteditable="true" spellcheck="true">
             <div class="empty-preview">
@@ -52,7 +57,11 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/turndown/dist/turndown.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/turndown-plugin-gfm@1.0.2/dist/turndown-plugin-gfm.js"></script>
+
     <script src="program.js"></script>
 
 </body>
