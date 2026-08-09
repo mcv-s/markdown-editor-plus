@@ -1,16 +1,15 @@
+
 .preview {
     overflow: auto;
-
     padding: 32px 40px;
 
-    background: #181818;
-    border-left: 1px solid #3a3a3a;
+    background: var(--bg);
+    border-left: 1px solid var(--border);
 
     line-height: 1.6;
-
     outline: none;
 
-    color: #e8e8e8;
+    color: var(--text);
 }
 
 .preview:focus {
@@ -25,7 +24,6 @@
 .preview h6 {
     margin-top: 1.5em;
     margin-bottom: 0.5em;
-
     line-height: 1.25;
 }
 
@@ -52,20 +50,18 @@
 
 .preview blockquote {
     margin-left: 0;
-
     padding-left: 16px;
 
-    border-left: 3px solid #555;
+    border-left: 3px solid var(--border);
 
-    color: #aaa;
+    color: var(--muted);
 }
 
 .preview code {
     padding: 2px 5px;
-
     border-radius: 4px;
 
-    background: #252525;
+    background: var(--surface);
 
     font-family:
         "Cascadia Code",
@@ -75,30 +71,25 @@
 
 .preview pre {
     padding: 14px;
-
     overflow-x: auto;
-
     border-radius: 6px;
 
-    background: #101010;
+    background: var(--code-bg, var(--surface));
 }
 
 .preview pre code {
     padding: 0;
-
     background: transparent;
 }
 
 .preview hr {
     border: 0;
-
-    border-top: 1px solid #3a3a3a;
-
+    border-top: 1px solid var(--border);
     margin: 24px 0;
 }
 
 .preview a {
-    color: #6ea8fe;
+    color: var(--link);
 }
 
 .preview img {
@@ -113,10 +104,10 @@
 .preview th,
 .preview td {
     padding: 7px 10px;
-
-    border: 1px solid #444;
+    border: 1px solid var(--border);
 }
 
 .preview th {
-    background: #252525;
+    background: var(--surface);
 }
+

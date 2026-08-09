@@ -1,9 +1,12 @@
 {
-    "name": "Markdown Editor",
-    "short_name": "Markdown",
-    "description": "A local Markdown editor for Windows.",
+    "name": "Markdown Editor Plus",
+    "short_name": "Markdown+",
+    "description": "A better Markdown file editor for Windows.",
+
+    "id": "./",
     "start_url": "./",
     "display": "standalone",
+
     "background_color": "#1e1e1e",
     "theme_color": "#1e1e1e",
 
@@ -17,6 +20,18 @@
             "src": "icons/icon_1.png",
             "sizes": "512x512",
             "type": "image/png"
+        }
+    ],
+
+    "file_handlers": [
+        {
+            "action": "./editor.html",
+            "accept": {
+                "text/markdown": [
+                    ".md",
+                    ".markdown"
+                ]
+            }
         }
     ]
 }

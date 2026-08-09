@@ -1,47 +1,83 @@
+:root {
+    --bg: #1e1e1e;
+    --surface: #252526;
+    --border: #3a3a3a;
+    --text: #e8e8e8;
+    --button-bg: #333;
+    --button-border: #444;
+    --button-hover: #414141;
+    --muted: #aaa;
+    --status-text: #999;
+    --empty-text: #666;
+    --scrollbar: #424242;
+    --scrollbar-hover: #555;
+    --divider-drag: #666;
+}
+
+
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg: #ffffff;
+        --surface: #f3f3f3;
+        --border: #d4d4d4;
+        --text: #1e1e1e;
+
+        --button-bg: #ffffff;
+        --button-text: #1e1e1e;
+        --button-border: #c8c8c8;
+        --button-hover: #e8e8e8;
+
+        --muted: #666;
+        --status-text: #666;
+        --empty-text: #999;
+
+        --scrollbar: #c1c1c1;
+        --scrollbar-hover: #999;
+
+        --divider-drag: #888;
+    }
+}
+
+
+
 * {
     box-sizing: border-box;
 }
 
 html,
 body {
-    margin: 0;
     width: 100%;
     height: 100%;
+    margin: 0;
 }
 
 body {
     display: flex;
     flex-direction: column;
-
-    background: #1e1e1e;
-    color: #e8e8e8;
-
-    font-family:
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .toolbar {
     height: 48px;
     flex-shrink: 0;
-
     display: flex;
     align-items: center;
-
-    padding: 0 12px;
     gap: 12px;
-
-    background: #252526;
-    border-bottom: 1px solid #3a3a3a;
+    padding: 0 12px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
 }
 
 .app-title {
     font-weight: 600;
     white-space: nowrap;
+    color: inherit;
+    text-decoration: none;
 }
+
 
 .toolbar-actions {
     display: flex;
@@ -49,32 +85,27 @@ body {
 }
 
 button {
-    border: 1px solid #444;
-    border-radius: 5px;
-
-    background: #333;
-    color: #eee;
-
     padding: 6px 12px;
-
+    border: 1px solid var(--button-border);
+    border-radius: 5px;
+    background: var(--button-bg);
+    color: var(--text);
     cursor: pointer;
 }
 
 button:hover:not(:disabled) {
-    background: #414141;
+    background: var(--button-hover);
 }
 
 button:disabled {
-    opacity: 0.45;
+    opacity: .45;
     cursor: default;
 }
 
 .file-name {
     margin-left: auto;
-
-    color: #aaa;
+    color: var(--muted);
     font-size: 13px;
-
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -83,7 +114,6 @@ button:disabled {
 .editor-container {
     flex: 1;
     min-height: 0;
-
     display: grid;
     grid-template-columns: minmax(0, 1fr) 5px minmax(0, 1fr);
 }
@@ -91,70 +121,84 @@ button:disabled {
 #editor {
     width: 100%;
     height: 100%;
-
+    padding: 24px;
     resize: none;
     border: 0;
     outline: 0;
-
-    padding: 24px;
-
-    background: #1e1e1e;
-    color: #e8e8e8;
-
-    font-family:
-        "Cascadia Code",
-        "Consolas",
-        monospace;
-
-    font-size: 15px;
-    line-height: 1.6;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.6 "Cascadia Code", "Consolas", monospace;
 }
 
-
 .empty-preview {
-    color: #666;
+    color: var(--empty-text);
+}
+
+.preview {
+    background: var(--bg);
+    color: var(--text);
 }
 
 .status-bar {
     height: 24px;
     flex-shrink: 0;
-
     display: flex;
     align-items: center;
     justify-content: space-between;
-
     padding: 0 10px;
-
-    background: #252526;
-    border-top: 1px solid #3a3a3a;
-
-    color: #999;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    color: var(--status-text);
     font-size: 12px;
+}
+
+.editor-divider {
+    width: 5px;
+    height: 100%;
+    background: var(--border);
+    cursor: col-resize;
+    user-select: none;
+    touch-action: none;
+}
+
+.editor-divider:hover {
+    background: var(--scrollbar-hover);
+}
+
+.editor-divider.dragging {
+    background: var(--divider-drag);
+}
+
+
+
+
+/* Title + image */
+
+
+.title {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.title img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
 }
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-/* -----------------------------
-   Scrollbars
------------------------------ */
+/* Scrollbars */
 
 html,
 body,
 #editor,
 .preview {
     scrollbar-width: thin;
-    scrollbar-color: #424242 transparent;
+    scrollbar-color: var(--scrollbar) transparent;
 }
 
 html::-webkit-scrollbar,
@@ -176,7 +220,7 @@ html::-webkit-scrollbar-thumb,
 body::-webkit-scrollbar-thumb,
 #editor::-webkit-scrollbar-thumb,
 .preview::-webkit-scrollbar-thumb {
-    background: #424242;
+    background: var(--scrollbar);
     border-radius: 4px;
 }
 
@@ -184,7 +228,7 @@ html::-webkit-scrollbar-thumb:hover,
 body::-webkit-scrollbar-thumb:hover,
 #editor::-webkit-scrollbar-thumb:hover,
 .preview::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: var(--scrollbar-hover);
 }
 
 html::-webkit-scrollbar-corner,
@@ -193,43 +237,3 @@ body::-webkit-scrollbar-corner,
 .preview::-webkit-scrollbar-corner {
     background: transparent;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-.editor-divider {
-    width: 5px;
-    height: 100%;
-
-    background: #3a3a3a;
-
-    cursor: col-resize;
-
-    user-select: none;
-    touch-action: none;
-}
-
-.editor-divider:hover {
-    background: #555;
-}
-
-.editor-divider.dragging {
-    background: #666;
-}
-
-
-
-
-
-
-
-

@@ -34,10 +34,17 @@
 
         <div class="welcome-content">
 
-            <h1>Better Markdown Editor</h1>
+            <div class="title">
+                <img src="icons/icon_1.png" alt="Markdown Editor+" />
+                <h1>Markdown Editor+</h1>
+            </div>
 
             <p class="welcome-subtitle">
-                Write, edit, and preview Markdown.
+                By MarsChompsVenus (mcv-s)
+            </p>
+
+            <p class="welcome-subtitle">
+                Write, edit, and preview Markdown; <br> now with a PWA.
             </p>
 
             <div class="welcome-actions">
@@ -55,68 +62,133 @@
         </div>
 
         <script>
-            const openFileButton = document.getElementById("openFile");
-            const newFileButton = document.getElementById("newFile");
+            const openFileButton =
+                document.getElementById("openFile");
+
+            const newFileButton =
+                document.getElementById("newFile");
+
 
             openFileButton.addEventListener("click", async () => {
                 try {
-                    const [handle] = await window.showOpenFilePicker({
-                        multiple: false,
-
-                        types: [
-                            {
-                                description: "Markdown files",
-                                accept: {
-                                    "text/markdown": [".md", ".markdown"]
-                                }
-                            }
-                        ]
-                    });
-
                     /*
-                     * Store the selected file handle so
-                     * editor.html can load it.
+                     * This happens directly from the user's
+                     * click, so the browser allows the picker.
                      */
 
-                    const dbRequest = indexedDB.open(
-                        "markdown-editor",
-                        1
-                    );
+                    const [handle] =
+                        await window.showOpenFilePicker({
+                            multiple: false,
+
+                            types: [
+                                {
+                                    description: "Markdown files",
+
+                                    accept: {
+                                        "text/markdown": [
+                                            ".md",
+                                            ".markdown"
+                                        ]
+                                    }
+                                }
+                            ]
+                        });
+
+
+                    /*
+                     * Store the file handle.
+                     */
+
+                    const dbRequest =
+                        indexedDB.open(
+                            "markdown-editor",
+                            1
+                        );
+
 
                     dbRequest.onupgradeneeded = () => {
-                        const db = dbRequest.result;
+                        const db =
+                            dbRequest.result;
 
-                        if (!db.objectStoreNames.contains("files")) {
+                        if (
+                            !db.objectStoreNames.contains(
+                                "files"
+                            )
+                        ) {
                             db.createObjectStore("files");
                         }
                     };
 
+
+                    dbRequest.onerror = () => {
+                        console.error(
+                            "Failed to open database:",
+                            dbRequest.error
+                        );
+                    };
+
+
                     dbRequest.onsuccess = () => {
-                        const db = dbRequest.result;
+                        const db =
+                            dbRequest.result;
 
                         const transaction =
-                            db.transaction("files", "readwrite");
+                            db.transaction(
+                                "files",
+                                "readwrite"
+                            );
+
 
                         transaction
                             .objectStore("files")
-                            .put(handle, "currentFile");
+                            .put(
+                                handle,
+                                "currentFile"
+                            );
+
 
                         transaction.oncomplete = () => {
-                            window.location.href = "editor.html";
+
+                            /*
+                             * Stay in the same tab.
+                             *
+                             * editor.html will see restore=1,
+                             * retrieve the handle, and load it.
+                             */
+
+                            window.location.href =
+                                "editor.html?restore=1";
+                        };
+
+
+                        transaction.onerror = () => {
+                            console.error(
+                                "Failed to save file handle:",
+                                transaction.error
+                            );
                         };
                     };
 
                 } catch (error) {
+
                     if (error.name !== "AbortError") {
-                        console.error(error);
+                        console.error(
+                            "Failed to open file:",
+                            error
+                        );
                     }
+
                 }
             });
 
 
-            newFileButton.addEventListener("click", () => {
-                window.location.href = "editor.html";
-            });
+            newFileButton.addEventListener(
+                "click",
+                () => {
+                    window.location.href =
+                        "editor.html";
+                }
+            );
         </script>
 
 

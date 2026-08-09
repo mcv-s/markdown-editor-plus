@@ -600,6 +600,24 @@ function collapsePreview() {
 }
 
 
+
+
+
+function fullscreenPreview() {
+    editorPanelWidth = 0;
+
+    editor.style.display = "none";
+    editorDivider.style.display = "none";
+    preview.style.display = "block";
+
+    editorContainer.style.gridTemplateColumns =
+        "1fr";
+
+    togglePanel.textContent = "Open Raw";
+    togglePanel.hidden = false;
+}
+
+
 function restoreSplit() {
     editorPanelWidth = 50;
 
@@ -788,4 +806,350 @@ if ("serviceWorker" in navigator) {
 
 
 
-checkLastFile();
+
+
+
+/* -----------------------------
+   Startup URL Handling
+----------------------------- */
+
+async function handleStartup() {
+    const params = new URLSearchParams(
+        window.location.search
+    );
+
+    const shouldRestore =
+        params.get("restore") === "1";
+
+    const filePath =
+        params.get("file-path");
+
+    // file-path takes priority
+    if (filePath) {
+        await openFileFromPath(filePath);
+
+        removeStartupParams();
+
+        return;
+    }
+
+    if (shouldRestore) {
+        await openLastFile();
+
+        removeStartupParams();
+
+        return;
+    }
+
+    // Normal editor startup
+    checkLastFile();
+}
+
+
+
+
+function removeStartupParams() {
+    const url =
+        new URL(window.location.href);
+
+    url.search = "";
+
+    window.history.replaceState(
+        {},
+        document.title,
+        url.pathname + url.hash
+    );
+}
+
+
+
+
+
+
+
+
+
+
+
+/* -----------------------------
+   Open File From URL / Path
+----------------------------- */
+
+async function openFileFromPath(filePath) {
+    try {
+        status.textContent = "Loading...";
+
+        /*
+         * -------------------------
+         * Windows / local path
+         * -------------------------
+         */
+
+        const isWindowsPath =
+            /^[a-zA-Z]:[\\/]/.test(filePath);
+
+        const isUNCPath =
+            filePath.startsWith("\\\\");
+
+        if (isWindowsPath || isUNCPath) {
+            await openLocalPath(filePath);
+
+            return;
+        }
+
+
+        /*
+         * -------------------------
+         * Web URL
+         * -------------------------
+         */
+
+        const url =
+            new URL(
+                filePath,
+                window.location.href
+            );
+
+
+        /*
+         * GitHub blob → raw GitHub
+         */
+
+        if (
+            url.hostname === "github.com" &&
+            url.pathname.includes("/blob/")
+        ) {
+            const parts =
+                url.pathname.split("/");
+
+            /*
+             * /owner/repo/blob/commit/path/to/file
+             */
+
+            const owner = parts[1];
+            const repo = parts[2];
+            const blobIndex =
+                parts.indexOf("blob");
+
+            const commit =
+                parts[blobIndex + 1];
+
+            const fileParts =
+                parts.slice(blobIndex + 2);
+
+            const rawUrl =
+                `https://raw.githubusercontent.com/` +
+                `${owner}/${repo}/` +
+                `${commit}/` +
+                `${fileParts.join("/")}`;
+
+            await loadRemoteMarkdown(
+                rawUrl
+            );
+
+            return;
+        }
+
+
+        /*
+         * Normal HTTP / HTTPS URL
+         */
+
+        if (
+            url.protocol !== "http:" &&
+            url.protocol !== "https:"
+        ) {
+            throw new Error(
+                "Unsupported file path."
+            );
+        }
+
+        await loadRemoteMarkdown(
+            url.href
+        );
+
+    } catch (error) {
+        console.error(
+            "Failed to open file:",
+            error
+        );
+
+        status.textContent =
+            "Failed to open file";
+    }
+}
+
+
+async function loadRemoteMarkdown(url) {
+    const response =
+        await fetch(url);
+
+    if (!response.ok) {
+        throw new Error(
+            `HTTP ${response.status}`
+        );
+    }
+
+    const contents =
+        await response.text();
+
+    editor.value = contents;
+
+    currentFileHandle = null;
+
+    const parsedUrl =
+        new URL(url);
+
+    fileName.textContent =
+        parsedUrl.pathname
+            .split("/")
+            .pop() ||
+        "Remote Markdown file";
+
+    saveFileButton.disabled = true;
+    saveAsFileButton.disabled = false;
+
+    setDirty(false);
+
+    updateEditor();
+
+    fullscreenPreview();
+
+    status.textContent =
+        "Opened remote file";
+}
+
+
+
+
+
+async function openLocalPath(path) {
+    try {
+        status.textContent =
+            `Open local file: ${path}`;
+
+        const normalizedPath =
+            path.replace(/\\/g, "/");
+
+        const requestedName =
+            decodeURIComponent(
+                normalizedPath.split("/").pop()
+            );
+
+        const [handle] =
+            await window.showOpenFilePicker({
+                multiple: false,
+
+                types: [
+                    {
+                        description:
+                            "Markdown files",
+
+                        accept: {
+                            "text/markdown": [
+                                ".md",
+                                ".markdown"
+                            ]
+                        }
+                    }
+                ]
+            });
+
+        /*
+         * Make sure the user selected the file
+         * requested by the URL.
+         */
+
+        if (handle.name !== requestedName) {
+            status.textContent =
+                `Selected "${handle.name}" instead of "${requestedName}"`;
+
+            return;
+        }
+
+        await loadFile(handle);
+
+        fullscreenPreview();
+
+        status.textContent =
+            "Opened local file";
+
+    } catch (error) {
+        if (error.name === "AbortError") {
+            status.textContent =
+                "File selection cancelled";
+
+            return;
+        }
+
+        console.error(
+            "Failed to open local file:",
+            error
+        );
+
+        status.textContent =
+            "Failed to open local file";
+    }
+}
+
+
+
+
+
+
+/* -----------------------------
+   PWA File Handler
+----------------------------- */
+
+if ("launchQueue" in window) {
+
+    window.launchQueue.setConsumer(
+        async launchParams => {
+
+            if (
+                !launchParams.files ||
+                !launchParams.files.length
+            ) {
+                return;
+            }
+
+            const handle =
+                launchParams.files[0];
+
+            try {
+                /*
+                 * Make sure this is actually a file.
+                 */
+
+                if (handle.kind !== "file") {
+                    return;
+                }
+
+                await loadFile(handle);
+
+                fullscreenPreview();
+
+                status.textContent =
+                    "Opened file";
+
+            } catch (error) {
+                console.error(
+                    "Failed to open launched file:",
+                    error
+                );
+
+                status.textContent =
+                    "Failed to open file";
+            }
+        }
+    );
+}
+
+
+
+
+
+
+
+
+handleStartup();
