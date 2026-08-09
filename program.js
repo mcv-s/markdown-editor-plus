@@ -333,7 +333,6 @@ openLastFileButton.addEventListener(
 
 
 
-
 /* -----------------------------
    Save
 ----------------------------- */
@@ -343,7 +342,18 @@ saveFileButton.addEventListener("click", async () => {
         return;
     }
 
-    if (currentFileHandle && supportsFileSystemAccess) {
+    /*
+     * If we have an actual writable file handle,
+     * save directly to that file.
+     *
+     * Do NOT use supportsFileSystemAccess here.
+     * The handle may have come from the PWA
+     * File Handling API rather than showOpenFilePicker().
+     */
+    if (
+        currentFileHandle &&
+        typeof currentFileHandle.createWritable === "function"
+    ) {
         try {
             const writable =
                 await currentFileHandle.createWritable();
@@ -364,9 +374,20 @@ saveFileButton.addEventListener("click", async () => {
         return;
     }
 
-    // Browser fallback
+    /*
+     * No writable file handle exists.
+     *
+     * This happens when a file was opened through
+     * the normal <input type="file"> fallback.
+     *
+     * Browsers such as Safari do not allow a web
+     * page to overwrite that original local file,
+     * so downloading is the fallback.
+     */
     downloadMarkdown();
 });
+
+
 
 
 
@@ -475,15 +496,32 @@ saveAsFileButton.addEventListener("click", async () => {
 
 /* Dirty checking */
 
+
 function setDirty(dirty) {
     isDirty = dirty;
 
-    saveFileButton.disabled = !dirty;
+    /*
+     * Save is only available when:
+     *
+     * 1. The document has changes
+     * 2. We have a real writable file handle
+     */
+    saveFileButton.disabled =
+        !dirty ||
+        !currentFileHandle ||
+        typeof currentFileHandle.createWritable !== "function";
+
+    /*
+     * Save As is always available.
+     */
+    saveAsFileButton.disabled = false;
 
     if (dirty) {
         status.textContent = "Modified";
     }
 }
+
+
 
 
 
