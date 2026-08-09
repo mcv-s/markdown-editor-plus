@@ -8,6 +8,12 @@ const saveFileButton = document.getElementById("saveFile");
 const saveAsFileButton = document.getElementById("saveAsFile");
 const openLastFileButton = document.getElementById("openLastFile");
 
+const supportsFileSystemAccess =
+    "showOpenFilePicker" in window &&
+    "showSaveFilePicker" in window;
+
+
+
 const fileName = document.getElementById("fileName");
 const status = document.getElementById("status");
 const wordCount = document.getElementById("wordCount");
@@ -111,6 +117,11 @@ async function getSavedFileHandle() {
 
 
 async function checkLastFile() {
+    if (!supportsFileSystemAccess) {
+        openLastFileButton.hidden = true;
+        return;
+    }
+
     try {
         const handle =
             await getSavedFileHandle();
@@ -146,35 +157,88 @@ async function checkLastFile() {
 ----------------------------- */
 
 openFileButton.addEventListener("click", async () => {
-    try {
-        const [handle] =
-            await window.showOpenFilePicker({
-                multiple: false,
+    if (supportsFileSystemAccess) {
+        try {
+            const [handle] =
+                await window.showOpenFilePicker({
+                    multiple: false,
 
-                types: [
-                    {
-                        description: "Markdown files",
-
-                        accept: {
-                            "text/markdown": [
-                                ".md",
-                                ".markdown"
-                            ]
+                    types: [
+                        {
+                            description: "Markdown files",
+                            accept: {
+                                "text/markdown": [
+                                    ".md",
+                                    ".markdown"
+                                ]
+                            }
                         }
-                    }
-                ]
-            });
+                    ]
+                });
 
-        await loadFile(handle);
+            await loadFile(handle);
 
-    } catch (error) {
-        if (error.name !== "AbortError") {
-            console.error(error);
-            status.textContent =
-                "Failed to open file";
+        } catch (error) {
+            if (error.name !== "AbortError") {
+                console.error(error);
+                status.textContent = "Failed to open file";
+            }
         }
+
+        return;
     }
+
+    openFileFallback();
 });
+
+
+function openFileFallback() {
+    const input = document.createElement("input");
+
+    input.type = "file";
+    input.accept = ".md,.markdown,text/markdown";
+
+    input.addEventListener("change", async () => {
+        const file = input.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
+        try {
+            const contents = await file.text();
+
+            editor.value = contents;
+
+            currentFileHandle = null;
+
+            fileName.textContent = file.name;
+
+            saveFileButton.disabled = true;
+            saveAsFileButton.disabled = false;
+
+            setDirty(false);
+            updateEditor();
+
+            status.textContent = "Opened";
+
+            fullscreenPreview();
+
+        } catch (error) {
+            console.error(error);
+            status.textContent = "Failed to open file";
+        }
+    });
+
+    input.click();
+}
+
+
+
+
+
+
+
 
 
 async function loadFile(handle) {
@@ -209,6 +273,13 @@ async function loadFile(handle) {
 ----------------------------- */
 
 async function openLastFile() {
+    if (!supportsFileSystemAccess) {
+        status.textContent =
+            "Previous files cannot be reopened automatically in this browser.";
+
+        return;
+    }
+
     try {
         const handle =
             await getSavedFileHandle();
@@ -240,6 +311,7 @@ async function openLastFile() {
         }
 
         await loadFile(handle);
+
         openLastFileButton.hidden = true;
 
     } catch (error) {
@@ -267,34 +339,73 @@ openLastFileButton.addEventListener(
 ----------------------------- */
 
 saveFileButton.addEventListener("click", async () => {
-    if (!currentFileHandle) {
+    if (!isDirty) {
         return;
     }
 
-    try {
-        const writable =
-            await currentFileHandle.createWritable();
+    if (currentFileHandle && supportsFileSystemAccess) {
+        try {
+            const writable =
+                await currentFileHandle.createWritable();
 
-        await writable.write(editor.value);
-        await writable.close();
+            await writable.write(editor.value);
+            await writable.close();
 
-        setDirty(false);
+            setDirty(false);
 
-        status.textContent = "Saved";
+            status.textContent = "Saved";
 
-    } catch (error) {
-        console.error(error);
+        } catch (error) {
+            console.error(error);
 
-        status.textContent =
-            "Failed to save";
+            status.textContent = "Failed to save";
+        }
+
+        return;
     }
+
+    // Browser fallback
+    downloadMarkdown();
 });
 
 
 
 
+function downloadMarkdown() {
+    const name =
+        fileName.textContent &&
+        fileName.textContent !== "Untitled"
+            ? fileName.textContent
+            : "document.md";
 
+    const blob =
+        new Blob(
+            [editor.value],
+            { type: "text/markdown;charset=utf-8" }
+        );
 
+    const url =
+        URL.createObjectURL(blob);
+
+    const link =
+        document.createElement("a");
+
+    link.href = url;
+    link.download =
+        name.toLowerCase().endsWith(".md")
+            ? name
+            : `${name}.md`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+
+    setDirty(false);
+
+    status.textContent = "Downloaded";
+}
 
 
 
@@ -306,52 +417,54 @@ saveFileButton.addEventListener("click", async () => {
 ----------------------------- */
 
 saveAsFileButton.addEventListener("click", async () => {
-    try {
-        const handle =
-            await window.showSaveFilePicker({
-                suggestedName:
-                    currentFileHandle?.name ||
-                    "document.md",
+    if (supportsFileSystemAccess) {
+        try {
+            const handle =
+                await window.showSaveFilePicker({
+                    suggestedName:
+                        currentFileHandle?.name ||
+                        "document.md",
 
-                types: [
-                    {
-                        description: "Markdown files",
-
-                        accept: {
-                            "text/markdown": [
-                                ".md"
-                            ]
+                    types: [
+                        {
+                            description: "Markdown files",
+                            accept: {
+                                "text/markdown": [".md"]
+                            }
                         }
-                    }
-                ]
-            });
+                    ]
+                });
 
-        const writable =
-            await handle.createWritable();
+            const writable =
+                await handle.createWritable();
 
-        await writable.write(editor.value);
-        await writable.close();
+            await writable.write(editor.value);
+            await writable.close();
 
-        currentFileHandle = handle;
+            currentFileHandle = handle;
 
-        await saveFileHandle(handle);
+            await saveFileHandle(handle);
 
-        fileName.textContent = handle.name;
+            fileName.textContent = handle.name;
 
-        saveAsFileButton.disabled = false;
+            saveAsFileButton.disabled = false;
 
-        setDirty(false);
+            setDirty(false);
 
-        status.textContent = "Saved";
+            status.textContent = "Saved";
 
-    } catch (error) {
-        if (error.name !== "AbortError") {
-            console.error(error);
-
-            status.textContent =
-                "Failed to save";
+        } catch (error) {
+            if (error.name !== "AbortError") {
+                console.error(error);
+                status.textContent = "Failed to save";
+            }
         }
+
+        return;
     }
+
+    // Browser fallback
+    downloadMarkdown();
 });
 
 
@@ -783,13 +896,15 @@ document.addEventListener("keydown", event => {
     ) {
         event.preventDefault();
 
-        if (currentFileHandle) {
+        if (
+            currentFileHandle &&
+            supportsFileSystemAccess
+        ) {
             saveFileButton.click();
         } else {
             saveAsFileButton.click();
         }
     }
-
 
     if (
         (event.ctrlKey || event.metaKey) &&
