@@ -92,8 +92,10 @@
     color: var(--link);
 }
 
-.preview img {
+#preview img {
     max-width: 100%;
+    height: auto;
+    display: block;
 }
 
 .preview table {
