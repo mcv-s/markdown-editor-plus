@@ -17,6 +17,12 @@
 }
 
 
+
+#input {
+    color:#3a3a3a
+}
+
+
 /* Follow system light mode */
 
 @media (prefers-color-scheme: light) {
@@ -140,7 +146,7 @@ button:disabled {
     cursor: default;
 }
 
-.file-name {
+.file-name, .preview-margin-box {
     margin-left: auto;
     color: var(--muted);
     font-size: 13px;

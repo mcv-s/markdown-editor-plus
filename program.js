@@ -42,6 +42,57 @@ turndown.use(
 );
 
 
+
+
+
+
+ /* -----------------------------
+    Preview Margin
+ ----------------------------- */
+
+const previewMarginSlider =
+    document.getElementById("previewMargin");
+
+const PREVIEW_MARGIN_KEY =
+    "previewMargin";
+
+const savedPreviewMargin =
+    localStorage.getItem(PREVIEW_MARGIN_KEY);
+
+if (savedPreviewMargin !== null) {
+    previewMarginSlider.value =
+        savedPreviewMargin;
+}
+
+function updatePreviewPadding() {
+    const value =
+        previewMarginSlider.value;
+
+    preview.style.padding =
+        `32px ${value}%`;
+
+    localStorage.setItem(
+        PREVIEW_MARGIN_KEY,
+        value
+    );
+}
+
+previewMarginSlider.addEventListener(
+    "input",
+    updatePreviewPadding
+);
+
+updatePreviewPadding();
+
+
+
+
+
+
+
+
+
+
 /* -----------------------------
    File Handle Storage
 ----------------------------- */
