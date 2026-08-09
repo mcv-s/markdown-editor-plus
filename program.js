@@ -464,25 +464,26 @@ function renderMarkdown() {
    Editor Panel Resizing
 ----------------------------- */
 
-const editorContainer =
-    document.querySelector(".editor-container");
+const editorContainer = document.querySelector(".editor-container");
+const editorDivider = document.getElementById("editorDivider");
+const togglePanel = document.getElementById("togglePanel");
 
-const editorDivider =
-    document.getElementById("editorDivider");
-
-const togglePanel =
-    document.getElementById("togglePanel");
+const DIVIDER_POSITION_KEY = "editorDividerPosition";
+const COLLAPSE_SIZE = 40;
 
 let isDraggingDivider = false;
+let editorPanelWidth = Number(localStorage.getItem(DIVIDER_POSITION_KEY)) || 50;
 
-let editorPanelWidth = 50;
-
-const COLLAPSE_SIZE = 40;
 
 
 function setPanelWidth(percent) {
     editorPanelWidth =
         Math.max(0, Math.min(100, percent));
+
+    localStorage.setItem(
+        DIVIDER_POSITION_KEY,
+        editorPanelWidth
+    );
 
     if (editorPanelWidth <= 0) {
         collapseEditor();
@@ -504,6 +505,25 @@ function setPanelWidth(percent) {
 
     togglePanel.hidden = true;
 }
+
+
+function restoreDividerPosition() {
+    const saved =
+        Number(localStorage.getItem(DIVIDER_POSITION_KEY));
+
+    if (
+        Number.isFinite(saved) &&
+        saved > 0 &&
+        saved < 100
+    ) {
+        setPanelWidth(saved);
+    }
+}
+
+
+
+
+
 
 
 function startDividerDrag(event) {
@@ -1153,3 +1173,5 @@ if ("launchQueue" in window) {
 
 
 handleStartup();
+
+restoreDividerPosition();
