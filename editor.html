@@ -14,6 +14,19 @@
     <meta name="theme-color" content="#1e1e1e">
 </head>
 
+
+<script>
+    const savedTheme =
+        localStorage.getItem("markdown-editor-theme");
+
+    if (savedTheme === "light" || savedTheme === "dark") {
+        document.documentElement.dataset.theme =
+            savedTheme;
+    }
+</script>
+
+
+
 <body>
 
     <header class="toolbar">

@@ -27,3 +27,90 @@ h1 {
 
     margin-top: 30px;
 }
+
+
+
+
+
+:root {
+    --accent: var(--text);
+}
+
+
+/* Theme button */
+
+.theme-toggle {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1px solid var(--border);
+    border-radius: 50%;
+
+    background: var(--surface);
+    color: var(--accent);
+
+    cursor: pointer;
+
+    z-index: 100;
+}
+
+.theme-toggle:hover {
+    background: var(--button-hover);
+}
+
+.theme-icon {
+    width: 21px;
+    height: 21px;
+
+    fill: currentColor;
+}
+
+
+/* Default icon */
+
+.moon-icon {
+    display: none;
+}
+
+
+/* Light system theme */
+
+@media (prefers-color-scheme: light) {
+    .sun-icon {
+        display: none;
+    }
+
+    .moon-icon {
+        display: block;
+    }
+}
+
+
+/* Explicit theme choices */
+
+:root[data-theme="dark"] .sun-icon {
+    display: block;
+}
+
+:root[data-theme="dark"] .moon-icon {
+    display: none;
+}
+
+:root[data-theme="light"] .sun-icon {
+    display: none;
+}
+
+:root[data-theme="light"] .moon-icon {
+    display: block;
+}
+

@@ -1,4 +1,65 @@
+
 :root {
+    --bg: #1e1e1e;
+    --surface: #252526;
+    --border: #3a3a3a;
+    --text: #e8e8e8;
+    --button-bg: #333;
+    --button-border: #444;
+    --button-hover: #414141;
+    --muted: #aaa;
+    --status-text: #999;
+    --empty-text: #666;
+    --scrollbar: #424242;
+    --scrollbar-hover: #555;
+    --divider-drag: #666;
+    --accent: #6ea8fe;
+}
+
+
+/* Follow system light mode */
+
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme]) {
+        --bg: #ffffff;
+        --surface: #f3f3f3;
+        --border: #d4d4d4;
+        --text: #1e1e1e;
+        --button-bg: #ffffff;
+        --button-border: #c8c8c8;
+        --button-hover: #e8e8e8;
+        --muted: #666;
+        --status-text: #666;
+        --empty-text: #999;
+        --scrollbar: #c1c1c1;
+        --scrollbar-hover: #999;
+        --divider-drag: #888;
+    }
+}
+
+
+/* Explicit light mode */
+
+:root[data-theme="light"] {
+    --bg: #ffffff;
+    --surface: #f3f3f3;
+    --border: #d4d4d4;
+    --text: #1e1e1e;
+    --button-bg: #ffffff;
+    --button-border: #c8c8c8;
+    --button-hover: #e8e8e8;
+    --muted: #666;
+    --status-text: #666;
+    --empty-text: #999;
+    --scrollbar: #c1c1c1;
+    --scrollbar-hover: #999;
+    --divider-drag: #888;
+}
+
+
+/* Explicit dark mode */
+
+:root[data-theme="dark"] {
     --bg: #1e1e1e;
     --surface: #252526;
     --border: #3a3a3a;
@@ -15,29 +76,6 @@
 }
 
 
-
-@media (prefers-color-scheme: light) {
-    :root {
-        --bg: #ffffff;
-        --surface: #f3f3f3;
-        --border: #d4d4d4;
-        --text: #1e1e1e;
-
-        --button-bg: #ffffff;
-        --button-text: #1e1e1e;
-        --button-border: #c8c8c8;
-        --button-hover: #e8e8e8;
-
-        --muted: #666;
-        --status-text: #666;
-        --empty-text: #999;
-
-        --scrollbar: #c1c1c1;
-        --scrollbar-hover: #999;
-
-        --divider-drag: #888;
-    }
-}
 
 
 
