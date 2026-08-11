@@ -126,7 +126,7 @@
                 </button>
 
                 <button id="openLastFile">
-                    Open Last File:
+                    Open Last File
                 </button>
 
             </div>
@@ -144,118 +144,263 @@
                 document.getElementById("openLastFile");
 
 
-            openFileButton.addEventListener("click", async () => {
-                try {
-                    /*
-                     * This happens directly from the user's
-                     * click, so the browser allows the picker.
-                     */
+            /*
+             * ------------------------------------------------------------
+             * File storage helpers
+             * ------------------------------------------------------------
+             */
 
-                    const [handle] =
-                        await window.showOpenFilePicker({
-                            multiple: false,
-
-                            types: [
-                                {
-                                    description: "Markdown files",
-
-                                    accept: {
-                                        "text/markdown": [
-                                            ".md",
-                                            ".markdown"
-                                        ]
-                                    }
-                                }
-                            ]
-                        });
+            const DB_NAME = "markdown-editor";
+            const STORE_NAME = "files";
+            const HANDLE_KEY = "currentFile";
+            const FALLBACK_FILE_KEY = "markdown-editor-last-file";
 
 
-                    /*
-                     * Store the file handle.
-                     */
-
-                    const dbRequest =
-                        indexedDB.open(
-                            "markdown-editor",
-                            1
-                        );
+            function supportsFileSystemAccess() {
+                return (
+                    typeof window.showOpenFilePicker === "function" &&
+                    typeof window.indexedDB !== "undefined"
+                );
+            }
 
 
-                    dbRequest.onupgradeneeded = () => {
-                        const db =
-                            dbRequest.result;
+            function openDatabase() {
+                return new Promise((resolve, reject) => {
+                    const request =
+                        indexedDB.open(DB_NAME, 1);
+
+                    request.onupgradeneeded = () => {
+                        const db = request.result;
 
                         if (
-                            !db.objectStoreNames.contains(
-                                "files"
-                            )
+                            !db.objectStoreNames.contains(STORE_NAME)
                         ) {
-                            db.createObjectStore("files");
+                            db.createObjectStore(STORE_NAME);
                         }
                     };
 
-
-                    dbRequest.onerror = () => {
-                        console.error(
-                            "Failed to open database:",
-                            dbRequest.error
-                        );
+                    request.onsuccess = () => {
+                        resolve(request.result);
                     };
 
-
-                    dbRequest.onsuccess = () => {
-                        const db =
-                            dbRequest.result;
-
-                        const transaction =
-                            db.transaction(
-                                "files",
-                                "readwrite"
-                            );
+                    request.onerror = () => {
+                        reject(request.error);
+                    };
+                });
+            }
 
 
-                        transaction
-                            .objectStore("files")
-                            .put(
-                                handle,
-                                "currentFile"
-                            );
+            async function saveFileHandle(handle) {
+                const db = await openDatabase();
+
+                return new Promise((resolve, reject) => {
+                    const transaction =
+                        db.transaction(
+                            STORE_NAME,
+                            "readwrite"
+                        );
+
+                    transaction
+                        .objectStore(STORE_NAME)
+                        .put(handle, HANDLE_KEY);
+
+                    transaction.oncomplete = () => {
+                        db.close();
+                        resolve();
+                    };
+
+                    transaction.onerror = () => {
+                        db.close();
+                        reject(transaction.error);
+                    };
+                });
+            }
 
 
-                        transaction.oncomplete = () => {
+            /*
+             * ------------------------------------------------------------
+             * Modern File System Access API
+             * ------------------------------------------------------------
+             */
+
+            async function openFileWithFileSystemAccess() {
+                const [handle] =
+                    await window.showOpenFilePicker({
+                        multiple: false,
+
+                        types: [
+                            {
+                                description: "Markdown files",
+
+                                accept: {
+                                    "text/markdown": [
+                                        ".md",
+                                        ".markdown"
+                                    ]
+                                }
+                            }
+                        ]
+                    });
+
+
+                /*
+                 * Save the handle so editor.html can restore it.
+                 */
+
+                await saveFileHandle(handle);
+
+
+                /*
+                 * Go to the editor and tell it to restore
+                 * the saved file.
+                 */
+
+                window.location.href =
+                    "editor.html?restore=1";
+            }
+
+
+            /*
+             * ------------------------------------------------------------
+             * Platform-independent fallback
+             * ------------------------------------------------------------
+             */
+
+            function openFileWithInput() {
+                return new Promise((resolve) => {
+
+                    const input =
+                        document.createElement("input");
+
+                    input.type = "file";
+
+                    input.accept =
+                        ".md,.markdown,text/markdown,text/plain";
+
+
+                    input.addEventListener(
+                        "change",
+                        async () => {
+
+                            const file =
+                                input.files?.[0];
+
+                            if (!file) {
+                                resolve();
+                                return;
+                            }
+
+
+                            try {
+
+                                const contents =
+                                    await file.text();
+
+
+                                /*
+                                 * Save the actual file contents locally.
+                                 *
+                                 * This is the fallback equivalent of
+                                 * saving a FileSystemFileHandle.
+                                 */
+
+                                localStorage.setItem(
+                                    FALLBACK_FILE_KEY,
+                                    JSON.stringify({
+                                        name: file.name,
+                                        contents: contents
+                                    })
+                                );
+
+
+                                /*
+                                 * Tell the editor to restore the
+                                 * locally cached file.
+                                 */
+
+                                window.location.href =
+                                    "editor.html?restore=1&fallback=1";
+
+                            } catch (error) {
+
+                                console.error(
+                                    "Failed to read file:",
+                                    error
+                                );
+                            }
+
+                            resolve();
+                        }
+                    );
+
+
+                    /*
+                     * The input must be triggered directly from
+                     * the user's click.
+                     */
+
+                    input.click();
+                });
+            }
+
+
+            /*
+             * ------------------------------------------------------------
+             * Open file
+             * ------------------------------------------------------------
+             */
+
+            openFileButton.addEventListener(
+                "click",
+                async () => {
+
+                    try {
+
+                        if (
+                            supportsFileSystemAccess()
+                        ) {
 
                             /*
-                             * Stay in the same tab.
-                             *
-                             * editor.html will see restore=1,
-                             * retrieve the handle, and load it.
+                             * Preferred method:
+                             * File System Access API
                              */
 
-                            window.location.href =
-                                "editor.html?restore=1";
-                        };
+                            await openFileWithFileSystemAccess();
 
+                        } else {
 
-                        transaction.onerror = () => {
+                            /*
+                             * Fallback:
+                             * traditional <input type="file">
+                             */
+
+                            await openFileWithInput();
+                        }
+
+                    } catch (error) {
+
+                        /*
+                         * Closing the native picker is not an error.
+                         */
+
+                        if (
+                            error?.name !== "AbortError"
+                        ) {
                             console.error(
-                                "Failed to save file handle:",
-                                transaction.error
+                                "Failed to open file:",
+                                error
                             );
-                        };
-                    };
-
-                } catch (error) {
-
-                    if (error.name !== "AbortError") {
-                        console.error(
-                            "Failed to open file:",
-                            error
-                        );
+                        }
                     }
-
                 }
-            });
+            );
 
+
+            /*
+             * ------------------------------------------------------------
+             * New file
+             * ------------------------------------------------------------
+             */
 
             newFileButton.addEventListener(
                 "click",
@@ -265,9 +410,22 @@
                 }
             );
 
+
+            /*
+             * ------------------------------------------------------------
+             * Open last file
+             * ------------------------------------------------------------
+             */
+
             openLastFileButton.addEventListener(
                 "click",
                 () => {
+
+                    /*
+                     * The editor will determine whether the
+                     * modern handle or fallback data exists.
+                     */
+
                     window.location.href =
                         "editor.html?restore=1";
                 }
