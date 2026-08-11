@@ -26,19 +26,28 @@ const turndown = new TurndownService({
 });
 
 turndown.keep([
-    "br",
-    "div",
-    "span",
-    "iframe",
-    "video",
-    "audio",
-    "details",
-    "summary",
-    "hr"
+"div",
+"span",
+"iframe",
+"video",
+"audio",
+"details",
+"summary",
+"hr"
 ]);
 
+turndown.addRule("preserveBr", {
+    filter: function (node) {
+        return node.nodeName === "BR";
+    },
+
+    replacement: function () {
+        return "<br>";
+    }
+});
+
 turndown.use(
-    turndownPluginGfm.gfm
+turndownPluginGfm.gfm
 );
 
 
@@ -63,6 +72,8 @@ if (savedPreviewMargin !== null) {
     previewMarginSlider.value =
         savedPreviewMargin;
 }
+
+
 
 function updatePreviewPadding() {
     const value =
