@@ -1,12 +1,16 @@
 let currentFileHandle = null;
 let isUpdating = false;
 let isDirty = false;
+let isEditing = true;
+
 
 const editor = document.getElementById("editor");
 const openFileButton = document.getElementById("openFile");
 const saveFileButton = document.getElementById("saveFile");
 const saveAsFileButton = document.getElementById("saveAsFile");
 const openLastFileButton = document.getElementById("openLastFile");
+const editFileButton = document.getElementById("editFile");
+
 
 const supportsFileSystemAccess =
     "showOpenFilePicker" in window &&
@@ -26,14 +30,14 @@ const turndown = new TurndownService({
 });
 
 turndown.keep([
-"div",
-"span",
-"iframe",
-"video",
-"audio",
-"details",
-"summary",
-"hr"
+    "div",
+    "span",
+    "iframe",
+    "video",
+    "audio",
+    "details",
+    "summary",
+    "hr"
 ]);
 
 turndown.addRule("preserveBr", {
@@ -47,7 +51,7 @@ turndown.addRule("preserveBr", {
 });
 
 turndown.use(
-turndownPluginGfm.gfm
+    turndownPluginGfm.gfm
 );
 
 
@@ -55,9 +59,9 @@ turndownPluginGfm.gfm
 
 
 
- /* -----------------------------
-    Preview Margin
- ----------------------------- */
+/* -----------------------------
+   Preview Margin
+----------------------------- */
 
 const previewMarginSlider =
     document.getElementById("previewMargin");
@@ -254,6 +258,23 @@ openFileButton.addEventListener("click", async () => {
 });
 
 
+
+
+/* 
+Edit file button
+*/
+editFileButton.addEventListener("click", () => {
+    setEditing(true);
+
+    editor.focus();
+
+    status.textContent = "Editing";
+});
+
+
+
+
+
 function openFileFallback() {
     const input = document.createElement("input");
 
@@ -323,6 +344,8 @@ async function loadFile(handle) {
     status.textContent = "Opened";
 
     updateEditor();
+
+    fullscreenPreview();
 }
 
 
@@ -454,10 +477,27 @@ saveFileButton.addEventListener("click", async () => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function downloadMarkdown() {
     const name =
         fileName.textContent &&
-        fileName.textContent !== "Untitled"
+            fileName.textContent !== "Untitled"
             ? fileName.textContent
             : "document.md";
 
@@ -586,7 +626,14 @@ function setDirty(dirty) {
 
 
 
+function setEditing(enabled) {
+    isEditing = enabled;
 
+    editor.readOnly = !enabled;
+    preview.contentEditable = enabled ? "true" : "false";
+
+    editFileButton.hidden = enabled;
+}
 
 
 
@@ -843,11 +890,12 @@ function fullscreenPreview() {
     editorDivider.style.display = "none";
     preview.style.display = "block";
 
-    editorContainer.style.gridTemplateColumns =
-        "1fr";
+    editorContainer.style.gridTemplateColumns = "1fr";
 
     togglePanel.textContent = "Open Raw";
     togglePanel.hidden = false;
+
+    setEditing(false);
 }
 
 
@@ -1304,8 +1352,6 @@ async function openLocalPath(path) {
 
         await loadFile(handle);
 
-        fullscreenPreview();
-
         status.textContent =
             "Opened local file";
 
@@ -1361,8 +1407,6 @@ if ("launchQueue" in window) {
                 }
 
                 await loadFile(handle);
-
-                fullscreenPreview();
 
                 status.textContent =
                     "Opened file";
