@@ -1,28 +1,31 @@
 
-
-
 /*
  * =========================================================
  * storage_module.js
  *
  * Centralized storage and file management.
  *
- * This module contains no editor/UI-specific code.
+ * This module contains no editor/UI-specific code and
+ * makes no assumptions about any particular file type.
  *
  * Handles:
- * - File System Access API
- * - File selection
- * - Save locations
- * - Reading files
- * - Writing files
- * - File downloads
- * - Last opened file
- * - IndexedDB
- * - File permissions
- * - localStorage
- * - Remote files
- * - GitHub files
- * - Local file paths
+ *
+ *   - File System Access API
+ *   - File selection
+ *   - Save locations
+ *   - Reading files
+ *   - Writing files
+ *   - File downloads
+ *   - Last opened file
+ *   - IndexedDB
+ *   - File permissions
+ *   - localStorage
+ *   - Remote files
+ *   - GitHub files
+ *   - Local file paths
+ *
+ * Filetype-specific behavior is supplied by the program
+ * using this module.
  * =========================================================
  */
 
@@ -36,18 +39,18 @@ const supportsFileSystemAccess =
     "showSaveFilePicker" in window;
 
 
-
 /* =========================================================
    IndexedDB Configuration
    ========================================================= */
 
-const DB_NAME = "storage-module";
+const DB_NAME =
+    "storage-module";
 
-const DB_VERSION = 1;
+const DB_VERSION =
+    1;
 
-const STORE_NAME = "files";
-
-const LAST_OPENED_FILE_KEY = "currentFile";
+const STORE_NAME =
+    "files";
 
 
 /* =========================================================
@@ -106,7 +109,10 @@ function openDatabase() {
    Last Opened File
    ========================================================= */
 
-async function saveLastOpenedFile(handle) {
+async function saveLastOpenedFile(
+    handle,
+    key = "currentFile"
+) {
 
     if (!handle) {
         return;
@@ -130,7 +136,7 @@ async function saveLastOpenedFile(handle) {
             .objectStore(STORE_NAME)
             .put(
                 handle,
-                LAST_OPENED_FILE_KEY
+                key
             );
 
 
@@ -148,7 +154,9 @@ async function saveLastOpenedFile(handle) {
 }
 
 
-async function getLastOpenedFile() {
+async function getLastOpenedFile(
+    key = "currentFile"
+) {
 
     const db =
         await openDatabase();
@@ -167,7 +175,7 @@ async function getLastOpenedFile() {
             transaction
                 .objectStore(STORE_NAME)
                 .get(
-                    LAST_OPENED_FILE_KEY
+                    key
                 );
 
 
@@ -189,7 +197,9 @@ async function getLastOpenedFile() {
 }
 
 
-async function clearLastOpenedFile() {
+async function clearLastOpenedFile(
+    key = "currentFile"
+) {
 
     const db =
         await openDatabase();
@@ -207,7 +217,7 @@ async function clearLastOpenedFile() {
         transaction
             .objectStore(STORE_NAME)
             .delete(
-                LAST_OPENED_FILE_KEY
+                key
             );
 
 
@@ -229,7 +239,9 @@ async function clearLastOpenedFile() {
    File Picker
    ========================================================= */
 
-async function selectFile(options = {}) {
+async function selectFile(
+    config = {}
+) {
 
     if (supportsFileSystemAccess) {
 
@@ -237,12 +249,20 @@ async function selectFile(options = {}) {
 
             const [handle] =
                 await window.showOpenFilePicker({
+
                     multiple:
-                        options.multiple ?? false,
+                        config.multiple ??
+                        false,
 
                     types:
-                        options.types ?? []
+                        config.types ??
+                        [],
+
+                    excludeAcceptAllOption:
+                        config.excludeAcceptAllOption ??
+                        false
                 });
+
 
             return handle;
 
@@ -252,23 +272,43 @@ async function selectFile(options = {}) {
                 error.name ===
                 "AbortError"
             ) {
+
                 return null;
             }
+
 
             throw error;
         }
     }
 
 
+    /*
+     * Browser fallback.
+     */
+
     const input =
-        document.createElement("input");
+        document.createElement(
+            "input"
+        );
 
-    input.type = "file";
 
-    if (options.accept) {
+    input.type =
+        "file";
+
+
+    input.multiple =
+        config.multiple ??
+        false;
+
+
+    if (
+        config.accept
+    ) {
+
         input.accept =
-            options.accept;
+            config.accept;
     }
+
 
     return new Promise(resolve => {
 
@@ -276,14 +316,30 @@ async function selectFile(options = {}) {
             "change",
             () => {
 
+                if (
+                    config.multiple
+                ) {
+
+                    resolve(
+                        Array.from(
+                            input.files || []
+                        )
+                    );
+
+                    return;
+                }
+
+
                 const file =
                     input.files?.[0];
+
 
                 resolve(
                     file || null
                 );
             }
         );
+
 
         input.click();
     });
@@ -295,23 +351,32 @@ async function selectFile(options = {}) {
    ========================================================= */
 
 async function selectSaveLocation(
-    suggestedName = "document",
-    options = {}
+    config = {}
 ) {
 
-    if (!supportsFileSystemAccess) {
+    if (
+        !supportsFileSystemAccess
+    ) {
+
         return null;
     }
+
 
     try {
 
         return await window.showSaveFilePicker({
 
-            suggestedName,
+            suggestedName:
+                config.suggestedName ??
+                "document",
 
             types:
-                options.types ?? []
+                config.types ??
+                [],
 
+            excludeAcceptAllOption:
+                config.excludeAcceptAllOption ??
+                false
         });
 
     } catch (error) {
@@ -320,8 +385,10 @@ async function selectSaveLocation(
             error.name ===
             "AbortError"
         ) {
+
             return null;
         }
+
 
         throw error;
     }
@@ -332,7 +399,15 @@ async function selectSaveLocation(
    Read File
    ========================================================= */
 
-async function readFile(source) {
+async function readFile(
+    source,
+    config = {}
+) {
+
+    const mode =
+        config.readMode ??
+        "text";
+
 
     /*
      * FileSystemFileHandle
@@ -348,12 +423,15 @@ async function readFile(source) {
             await source.getFile();
 
 
-        return await file.text();
+        return readFileContents(
+            file,
+            mode
+        );
     }
 
 
     /*
-     * File object
+     * File / Blob
      */
 
     if (
@@ -362,7 +440,10 @@ async function readFile(source) {
         "function"
     ) {
 
-        return await source.text();
+        return readFileContents(
+            source,
+            mode
+        );
     }
 
 
@@ -373,10 +454,53 @@ async function readFile(source) {
 
 
 /* =========================================================
+   Read File Contents
+   ========================================================= */
+
+async function readFileContents(
+    file,
+    mode
+) {
+
+    switch (mode) {
+
+        case "text":
+
+            return await file.text();
+
+
+        case "arrayBuffer":
+
+            return await file.arrayBuffer();
+
+
+        case "blob":
+
+            return file;
+
+
+        case "file":
+
+            return file;
+
+
+        default:
+
+            throw new Error(
+                `Unsupported read mode: ${mode}`
+            );
+    }
+}
+
+
+/* =========================================================
    Get File Name
    ========================================================= */
 
-function getFileName(source) {
+function getFileName(
+    source,
+    config = {}
+) {
 
     if (
         source &&
@@ -388,7 +512,10 @@ function getFileName(source) {
     }
 
 
-    return "document.md";
+    return (
+        config.defaultName ??
+        "document"
+    );
 }
 
 
@@ -436,7 +563,8 @@ async function writeFile(
 
 async function saveFile(
     handle,
-    contents
+    contents,
+    config = {}
 ) {
 
     await writeFile(
@@ -450,9 +578,17 @@ async function saveFile(
      * the last opened file.
      */
 
-    await saveLastOpenedFile(
-        handle
-    );
+    if (
+        config.rememberFile !== false
+    ) {
+
+        await saveLastOpenedFile(
+            handle,
+
+            config.lastOpenedFileKey ??
+            "currentFile"
+        );
+    }
 }
 
 
@@ -460,7 +596,10 @@ async function saveFile(
    File Permissions
    ========================================================= */
 
-async function requestFilePermission(handle) {
+async function requestFilePermission(
+    handle,
+    config = {}
+) {
 
     if (
         !handle ||
@@ -472,9 +611,14 @@ async function requestFilePermission(handle) {
     }
 
 
+    const mode =
+        config.permissionMode ??
+        "readwrite";
+
+
     let permission =
         await handle.queryPermission({
-            mode: "readwrite"
+            mode
         });
 
 
@@ -485,7 +629,7 @@ async function requestFilePermission(handle) {
 
         permission =
             await handle.requestPermission({
-                mode: "readwrite"
+                mode
             });
     }
 
@@ -503,32 +647,27 @@ async function requestFilePermission(handle) {
 
 function downloadFile(
     contents,
-    name = "document.md"
+    name,
+    config = {}
 ) {
 
-    if (!name) {
-        name = "document.md";
-    }
-
-
-    if (
-        !name
-            .toLowerCase()
-            .endsWith(".md")
-    ) {
-
-        name += ".md";
-    }
+    const downloadName =
+        name ||
+        config.defaultName ||
+        "download";
 
 
     const blob =
-        new Blob(
-            [contents],
-            {
-                type:
-                    "text/markdown;charset=utf-8"
-            }
-        );
+        contents instanceof Blob
+            ? contents
+            : new Blob(
+                [contents],
+                {
+                    type:
+                        config.mimeType ??
+                        "application/octet-stream"
+                }
+            );
 
 
     const url =
@@ -538,12 +677,17 @@ function downloadFile(
 
 
     const link =
-        document.createElement("a");
+        document.createElement(
+            "a"
+        );
 
 
-    link.href = url;
+    link.href =
+        url;
 
-    link.download = name;
+
+    link.download =
+        downloadName;
 
 
     document.body.appendChild(
@@ -567,10 +711,16 @@ function downloadFile(
    Remote Files
    ========================================================= */
 
-async function loadRemoteFile(url) {
+async function loadRemoteFile(
+    url,
+    config = {}
+) {
 
     const response =
-        await fetch(url);
+        await fetch(
+            url,
+            config.fetchOptions ?? {}
+        );
 
 
     if (!response.ok) {
@@ -581,10 +731,6 @@ async function loadRemoteFile(url) {
     }
 
 
-    const contents =
-        await response.text();
-
-
     const parsedUrl =
         new URL(url);
 
@@ -593,14 +739,67 @@ async function loadRemoteFile(url) {
         parsedUrl.pathname
             .split("/")
             .pop() ||
-        "document.md";
+        config.defaultName ||
+        "download";
+
+
+    const contents =
+        await readRemoteContents(
+            response,
+            config.readMode ??
+            "text"
+        );
 
 
     return {
+
         contents,
+
         name,
-        url: parsedUrl.href
+
+        url:
+            parsedUrl.href
     };
+}
+
+
+/* =========================================================
+   Read Remote Contents
+   ========================================================= */
+
+async function readRemoteContents(
+    response,
+    mode
+) {
+
+    switch (mode) {
+
+        case "text":
+
+            return await response.text();
+
+
+        case "arrayBuffer":
+
+            return await response.arrayBuffer();
+
+
+        case "blob":
+
+            return await response.blob();
+
+
+        case "response":
+
+            return response;
+
+
+        default:
+
+            throw new Error(
+                `Unsupported read mode: ${mode}`
+            );
+    }
 }
 
 
@@ -608,7 +807,9 @@ async function loadRemoteFile(url) {
    GitHub Blob → Raw URL
    ========================================================= */
 
-function githubBlobToRawUrl(url) {
+function githubBlobToRawUrl(
+    url
+) {
 
     const parsedUrl =
         new URL(url);
@@ -641,15 +842,21 @@ function githubBlobToRawUrl(url) {
     const owner =
         parts[1];
 
+
     const repo =
         parts[2];
 
+
     const blobIndex =
-        parts.indexOf("blob");
+        parts.indexOf(
+            "blob"
+        );
 
 
     const commit =
-        parts[blobIndex + 1];
+        parts[
+            blobIndex + 1
+        ];
 
 
     const fileParts =
@@ -682,7 +889,10 @@ function githubBlobToRawUrl(url) {
    Open File From Path
    ========================================================= */
 
-async function openFileFromPath(filePath) {
+async function openFileFromPath(
+    filePath,
+    config = {}
+) {
 
     /*
      * Windows path
@@ -699,7 +909,9 @@ async function openFileFromPath(filePath) {
      */
 
     const isUNCPath =
-        filePath.startsWith("\\\\");
+        filePath.startsWith(
+            "\\\\"
+        );
 
 
     if (
@@ -708,7 +920,8 @@ async function openFileFromPath(filePath) {
     ) {
 
         return await openLocalPath(
-            filePath
+            filePath,
+            config
         );
     }
 
@@ -738,17 +951,25 @@ async function openFileFromPath(filePath) {
 
         const remote =
             await loadRemoteFile(
-                rawUrl
+                rawUrl,
+                config
             );
 
 
         return {
-            type: "remote",
+
+            type:
+                "remote",
+
             contents:
                 remote.contents,
+
             name:
                 remote.name,
-            handle: null,
+
+            handle:
+                null,
+
             url:
                 remote.url
         };
@@ -760,8 +981,10 @@ async function openFileFromPath(filePath) {
      */
 
     if (
-        url.protocol !== "http:" &&
-        url.protocol !== "https:"
+        url.protocol !==
+            "http:" &&
+        url.protocol !==
+            "https:"
     ) {
 
         throw new Error(
@@ -772,17 +995,25 @@ async function openFileFromPath(filePath) {
 
     const remote =
         await loadRemoteFile(
-            url.href
+            url.href,
+            config
         );
 
 
     return {
-        type: "remote",
+
+        type:
+            "remote",
+
         contents:
             remote.contents,
+
         name:
             remote.name,
-        handle: null,
+
+        handle:
+            null,
+
         url:
             remote.url
     };
@@ -793,7 +1024,10 @@ async function openFileFromPath(filePath) {
    Open Local Path
    ========================================================= */
 
-async function openLocalPath(path) {
+async function openLocalPath(
+    path,
+    config = {}
+) {
 
     const normalizedPath =
         path.replace(
@@ -811,7 +1045,9 @@ async function openLocalPath(path) {
 
 
     const handle =
-        await selectFile();
+        await selectFile(
+            config
+        );
 
 
     if (!handle) {
@@ -829,8 +1065,9 @@ async function openLocalPath(path) {
     ) {
 
         if (
+            config.verifyName !== false &&
             handle.name !==
-            requestedName
+                requestedName
         ) {
 
             throw new Error(
@@ -842,20 +1079,34 @@ async function openLocalPath(path) {
 
         const contents =
             await readFile(
-                handle
+                handle,
+                config
             );
 
 
-        await saveLastOpenedFile(
-            handle
-        );
+        if (
+            config.rememberFile !== false
+        ) {
+
+            await saveLastOpenedFile(
+                handle,
+
+                config.lastOpenedFileKey ??
+                "currentFile"
+            );
+        }
 
 
         return {
-            type: "local",
+
+            type:
+                "local",
+
             contents,
+
             name:
                 handle.name,
+
             handle
         };
     }
@@ -867,16 +1118,26 @@ async function openLocalPath(path) {
 
     const contents =
         await readFile(
-            handle
+            handle,
+            config
         );
 
 
     return {
-        type: "local",
+
+        type:
+            "local",
+
         contents,
+
         name:
-            handle.name,
-        handle: null
+            getFileName(
+                handle,
+                config
+            ),
+
+        handle:
+            null
     };
 }
 
@@ -885,7 +1146,9 @@ async function openLocalPath(path) {
    localStorage
    ========================================================= */
 
-function getStorage(key) {
+function getStorage(
+    key
+) {
 
     return localStorage.getItem(
         key
@@ -905,7 +1168,9 @@ function setStorage(
 }
 
 
-function removeStorage(key) {
+function removeStorage(
+    key
+) {
 
     localStorage.removeItem(
         key
@@ -939,6 +1204,7 @@ window.StorageModule = {
      */
 
     readFile,
+    readFileContents,
     writeFile,
     saveFile,
     getFileName,
@@ -978,6 +1244,5 @@ window.StorageModule = {
     getStorage,
     setStorage,
     removeStorage
-
 };
 

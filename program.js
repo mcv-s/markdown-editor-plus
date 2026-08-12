@@ -1,3 +1,4 @@
+
 let currentFileHandle = null;
 let isUpdating = false;
 let isDirty = false;
@@ -13,14 +14,14 @@ if (!storage) {
 }
 
 
-
-
-
-
+/* =========================================================
+   Markdown File Configuration
+   ========================================================= */
 
 const MARKDOWN_FILE_TYPES = [
     {
         description: "Markdown files",
+
         accept: {
             "text/markdown": [
                 ".md",
@@ -34,30 +35,130 @@ const MARKDOWN_FILE_ACCEPT =
     ".md,.markdown,text/markdown";
 
 
+const MARKDOWN_STORAGE_CONFIG = {
+
+    /*
+     * File type
+     */
+
+    defaultName:
+        "document.md",
+
+    mimeType:
+        "text/markdown;charset=utf-8",
+
+    readMode:
+        "text",
 
 
+    /*
+     * File picker
+     */
+
+    types:
+        MARKDOWN_FILE_TYPES,
+
+    accept:
+        MARKDOWN_FILE_ACCEPT,
 
 
+    /*
+     * Last opened file
+     */
+
+    lastOpenedFileKey:
+        "markdown-editor-current-file",
 
 
-const editor = document.getElementById("editor");
-const openFileButton = document.getElementById("openFile");
-const saveFileButton = document.getElementById("saveFile");
-const saveAsFileButton = document.getElementById("saveAsFile");
-const openLastFileButton = document.getElementById("openLastFile");
-const editFileButton = document.getElementById("editFile");
+    /*
+     * File permissions
+     */
+
+    permissionMode:
+        "readwrite",
 
 
-const fileName = document.getElementById("fileName");
-const status = document.getElementById("status");
-const wordCount = document.getElementById("wordCount");
-const preview = document.getElementById("preview");
+    /*
+     * Remember opened files
+     */
 
-const turndown = new TurndownService({
-    headingStyle: "atx",
-    bulletListMarker: "-",
-    codeBlockStyle: "fenced"
-});
+    rememberFile:
+        true
+};
+
+
+/* =========================================================
+   DOM Elements
+   ========================================================= */
+
+const editor =
+    document.getElementById(
+        "editor"
+    );
+
+const openFileButton =
+    document.getElementById(
+        "openFile"
+    );
+
+const saveFileButton =
+    document.getElementById(
+        "saveFile"
+    );
+
+const saveAsFileButton =
+    document.getElementById(
+        "saveAsFile"
+    );
+
+const openLastFileButton =
+    document.getElementById(
+        "openLastFile"
+    );
+
+const editFileButton =
+    document.getElementById(
+        "editFile"
+    );
+
+const fileName =
+    document.getElementById(
+        "fileName"
+    );
+
+const status =
+    document.getElementById(
+        "status"
+    );
+
+const wordCount =
+    document.getElementById(
+        "wordCount"
+    );
+
+const preview =
+    document.getElementById(
+        "preview"
+    );
+
+
+/* =========================================================
+   Turndown
+   ========================================================= */
+
+const turndown =
+    new TurndownService({
+
+        headingStyle:
+            "atx",
+
+        bulletListMarker:
+            "-",
+
+        codeBlockStyle:
+            "fenced"
+    });
+
 
 turndown.keep([
     "div",
@@ -70,15 +171,27 @@ turndown.keep([
     "hr"
 ]);
 
-turndown.addRule("preserveBr", {
-    filter: function (node) {
-        return node.nodeName === "BR";
-    },
 
-    replacement: function () {
-        return "<br>";
+turndown.addRule(
+    "preserveBr",
+    {
+        filter:
+            function (node) {
+
+                return (
+                    node.nodeName ===
+                    "BR"
+                );
+            },
+
+        replacement:
+            function () {
+
+                return "<br>";
+            }
     }
-});
+);
+
 
 turndown.use(
     turndownPluginGfm.gfm
@@ -86,31 +199,43 @@ turndown.use(
 
 
 /* =========================================================
-Preview Margin
-========================================================= */
+   Preview Margin
+   ========================================================= */
 
 const previewMarginSlider =
-    document.getElementById("previewMargin");
+    document.getElementById(
+        "previewMargin"
+    );
 
 const PREVIEW_MARGIN_KEY =
     "previewMargin";
+
 
 const savedPreviewMargin =
     storage.getStorage(
         PREVIEW_MARGIN_KEY
     );
 
-if (savedPreviewMargin !== null) {
+
+if (
+    savedPreviewMargin !==
+    null
+) {
+
     previewMarginSlider.value =
         savedPreviewMargin;
 }
 
+
 function updatePreviewPadding() {
+
     const value =
         previewMarginSlider.value;
 
+
     preview.style.padding =
         `32px ${value}%`;
+
 
     storage.setStorage(
         PREVIEW_MARGIN_KEY,
@@ -118,78 +243,111 @@ function updatePreviewPadding() {
     );
 }
 
+
 previewMarginSlider.addEventListener(
     "input",
     updatePreviewPadding
 );
 
+
 updatePreviewPadding();
 
 
 /* =========================================================
-Check Last Opened File
-========================================================= */
-
+   Check Last Opened File
+   ========================================================= */
 
 async function checkLastFile() {
-    if (!storage.supportsFileSystemAccess) {
-        openLastFileButton.hidden = true;
+
+    if (
+        !storage.supportsFileSystemAccess
+    ) {
+
+        openLastFileButton.hidden =
+            true;
+
         return;
     }
 
+
     try {
+
         const handle =
-            await storage.getLastOpenedFile();
+            await storage.getLastOpenedFile(
+                MARKDOWN_STORAGE_CONFIG
+                    .lastOpenedFileKey
+            );
+
 
         openLastFileButton.hidden =
             !handle;
 
     } catch (error) {
+
         console.error(
             "Could not check for last file:",
             error
         );
 
-        openLastFileButton.hidden = true;
+
+        openLastFileButton.hidden =
+            true;
     }
 }
 
 
 /* =========================================================
-Open File
-========================================================= */
+   Open File
+   ========================================================= */
 
 openFileButton.addEventListener(
     "click",
     async () => {
 
         try {
+
             const handle =
-                await storage.selectFile();
+                await storage.selectFile(
+                    MARKDOWN_STORAGE_CONFIG
+                );
+
 
             if (!handle) {
                 return;
             }
 
+
             /*
              * File System Access API
              */
+
             if (
                 typeof handle.getFile ===
                 "function"
             ) {
-                await loadFile(handle);
+
+                await loadFile(
+                    handle
+                );
 
                 return;
             }
 
+
             /*
              * Fallback File object
              */
-            await loadFallbackFile(handle);
+
+            await loadFallbackFile(
+                handle
+            );
 
         } catch (error) {
-            console.error(error);
+
+            console.error(
+                error
+            );
+
 
             status.textContent =
                 "Failed to open file";
@@ -199,16 +357,20 @@ openFileButton.addEventListener(
 
 
 /* =========================================================
-Edit File
-========================================================= */
+   Edit File
+   ========================================================= */
 
 editFileButton.addEventListener(
     "click",
     () => {
 
-        setEditing(true);
+        setEditing(
+            true
+        );
+
 
         editor.focus();
+
 
         status.textContent =
             "Editing";
@@ -217,130 +379,215 @@ editFileButton.addEventListener(
 
 
 /* =========================================================
-Load File
-========================================================= */
+   Load File
+   ========================================================= */
 
-async function loadFile(handle) {
-    currentFileHandle = handle;
+async function loadFile(
+    handle
+) {
+
+    currentFileHandle =
+        handle;
+
 
     const contents =
-        await storage.readFile(handle);
+        await storage.readFile(
+            handle,
+            MARKDOWN_STORAGE_CONFIG
+        );
+
 
     editor.value =
         contents;
 
-    fileName.textContent =
-        storage.getFileName(handle);
 
-    saveFileButton.disabled = true;
-    saveAsFileButton.disabled = false;
+    fileName.textContent =
+        storage.getFileName(
+            handle,
+            MARKDOWN_STORAGE_CONFIG
+        );
+
+
+    saveFileButton.disabled =
+        true;
+
+
+    saveAsFileButton.disabled =
+        false;
+
 
     /*
      * Store this as the last opened file.
      */
+
     await storage.saveLastOpenedFile(
-        handle
+        handle,
+        MARKDOWN_STORAGE_CONFIG
+            .lastOpenedFileKey
     );
 
-    setDirty(false);
+
+    setDirty(
+        false
+    );
+
 
     status.textContent =
         "Opened";
 
+
     updateEditor();
+
 
     fullscreenPreview();
 }
 
 
 /* =========================================================
-Load Fallback File
-========================================================= */
+   Load Fallback File
+   ========================================================= */
 
-async function loadFallbackFile(file) {
+async function loadFallbackFile(
+    file
+) {
+
     const contents =
-        await storage.readFile(file);
+        await storage.readFile(
+            file,
+            MARKDOWN_STORAGE_CONFIG
+        );
+
 
     editor.value =
         contents;
+
 
     /*
      * File objects cannot be written back
      * to their original location.
      */
-    currentFileHandle = null;
+
+    currentFileHandle =
+        null;
+
 
     fileName.textContent =
-        storage.getFileName(file);
+        storage.getFileName(
+            file,
+            MARKDOWN_STORAGE_CONFIG
+        );
 
-    saveFileButton.disabled = true;
-    saveAsFileButton.disabled = false;
 
-    setDirty(false);
+    saveFileButton.disabled =
+        true;
+
+
+    saveAsFileButton.disabled =
+        false;
+
+
+    setDirty(
+        false
+    );
+
 
     updateEditor();
 
+
     status.textContent =
         "Opened";
+
 
     fullscreenPreview();
 }
 
 
 /* =========================================================
-Open Last File
-========================================================= */
+   Open Last File
+   ========================================================= */
 
 async function openLastFile() {
-    if (!storage.supportsFileSystemAccess) {
+
+    if (
+        !storage.supportsFileSystemAccess
+    ) {
+
         status.textContent =
             "Previous files cannot be reopened automatically in this browser.";
 
         return;
     }
 
+
     try {
+
         const handle =
-            await storage.getLastOpenedFile();
+            await storage.getLastOpenedFile(
+                MARKDOWN_STORAGE_CONFIG
+                    .lastOpenedFileKey
+            );
+
 
         if (!handle) {
+
             status.textContent =
                 "No previous file";
 
             return;
         }
 
+
         const permission =
             await storage.requestFilePermission(
-                handle
+                handle,
+                MARKDOWN_STORAGE_CONFIG
             );
 
+
         if (!permission) {
+
             status.textContent =
                 "Permission denied";
 
             return;
         }
 
-        await loadFile(handle);
+
+        await loadFile(
+            handle
+        );
+
 
         openLastFileButton.hidden =
             true;
 
     } catch (error) {
-        console.error(error);
+
+        console.error(
+            error
+        );
+
 
         /*
          * The stored handle may no longer
          * be valid.
          */
-        await storage.clearLastOpenedFile()
-            .catch(() => { });
+
+        await storage
+            .clearLastOpenedFile(
+                MARKDOWN_STORAGE_CONFIG
+                    .lastOpenedFileKey
+            )
+            .catch(
+                () => { }
+            );
+
 
         status.textContent =
             "Failed to open last file";
     }
 }
+
 
 openLastFileButton.addEventListener(
     "click",
@@ -349,8 +596,8 @@ openLastFileButton.addEventListener(
 
 
 /* =========================================================
-Save
-========================================================= */
+   Save
+   ========================================================= */
 
 saveFileButton.addEventListener(
     "click",
@@ -360,63 +607,90 @@ saveFileButton.addEventListener(
             return;
         }
 
+
         /*
          * Save directly to the current
          * writable file handle.
          */
+
         if (
             currentFileHandle &&
             typeof currentFileHandle.createWritable ===
             "function"
         ) {
+
             try {
+
                 await storage.saveFile(
                     currentFileHandle,
-                    editor.value
+                    editor.value,
+                    MARKDOWN_STORAGE_CONFIG
                 );
 
-                setDirty(false);
+
+                setDirty(
+                    false
+                );
+
 
                 status.textContent =
                     "Saved";
 
             } catch (error) {
-                console.error(error);
+
+                console.error(
+                    error
+                );
+
 
                 status.textContent =
                     "Failed to save";
             }
 
+
             return;
         }
+
 
         /*
          * No writable handle.
          *
          * Download instead.
          */
+
         downloadMarkdown();
     }
 );
 
 
 /* =========================================================
-Download
-========================================================= */
+   Download
+   ========================================================= */
 
 function downloadMarkdown() {
+
     const name =
         fileName.textContent &&
-            fileName.textContent !== "Untitled"
+            fileName.textContent !==
+            "Untitled"
+
             ? fileName.textContent
-            : "document.md";
+
+            : MARKDOWN_STORAGE_CONFIG
+                .defaultName;
+
 
     storage.downloadFile(
         editor.value,
-        name
+        name,
+        MARKDOWN_STORAGE_CONFIG
     );
 
-    setDirty(false);
+
+    setDirty(
+        false
+    );
+
 
     status.textContent =
         "Downloaded";
@@ -424,76 +698,111 @@ function downloadMarkdown() {
 
 
 /* =========================================================
-Save As
-========================================================= */
+   Save As
+   ========================================================= */
 
 saveAsFileButton.addEventListener(
     "click",
     async () => {
 
-        if (storage.supportsFileSystemAccess) {
+        if (
+            storage.supportsFileSystemAccess
+        ) {
 
             try {
+
                 const handle =
-                    await storage.selectSaveLocation(
-                        currentFileHandle?.name ||
-                        "document.md"
-                    );
+                    await storage.selectSaveLocation({
+
+                        ...MARKDOWN_STORAGE_CONFIG,
+
+                        suggestedName:
+                            currentFileHandle?.name ||
+                            MARKDOWN_STORAGE_CONFIG
+                                .defaultName
+                    });
+
 
                 if (!handle) {
                     return;
                 }
 
+
                 await storage.saveFile(
                     handle,
-                    editor.value
+                    editor.value,
+                    MARKDOWN_STORAGE_CONFIG
                 );
+
 
                 currentFileHandle =
                     handle;
 
+
                 fileName.textContent =
-                    storage.getFileName(handle);
+                    storage.getFileName(
+                        handle,
+                        MARKDOWN_STORAGE_CONFIG
+                    );
+
 
                 saveAsFileButton.disabled =
                     false;
 
-                setDirty(false);
+
+                setDirty(
+                    false
+                );
+
 
                 /*
                  * saveFile() already stores
                  * the handle as last opened.
                  */
+
                 openLastFileButton.hidden =
                     true;
+
 
                 status.textContent =
                     "Saved";
 
             } catch (error) {
-                console.error(error);
+
+                console.error(
+                    error
+                );
+
 
                 status.textContent =
                     "Failed to save";
             }
 
+
             return;
         }
+
 
         /*
          * Browser fallback
          */
+
         downloadMarkdown();
     }
 );
 
 
 /* =========================================================
-Dirty Checking
-========================================================= */
+   Dirty Checking
+   ========================================================= */
 
-function setDirty(dirty) {
-    isDirty = dirty;
+function setDirty(
+    dirty
+) {
+
+    isDirty =
+        dirty;
+
 
     /*
      * Save is only available when:
@@ -501,18 +810,24 @@ function setDirty(dirty) {
      * 1. The document has changes
      * 2. We have a real writable file handle
      */
+
     saveFileButton.disabled =
         !dirty ||
         !currentFileHandle ||
         typeof currentFileHandle.createWritable !==
         "function";
 
+
     /*
      * Save As is always available.
      */
-    saveAsFileButton.disabled = false;
+
+    saveAsFileButton.disabled =
+        false;
+
 
     if (dirty) {
+
         status.textContent =
             "Modified";
     }
@@ -520,17 +835,26 @@ function setDirty(dirty) {
 
 
 /* =========================================================
-Editing State
-========================================================= */
+   Editing State
+   ========================================================= */
 
-function setEditing(enabled) {
-    isEditing = enabled;
+function setEditing(
+    enabled
+) {
+
+    isEditing =
+        enabled;
+
 
     editor.readOnly =
         !enabled;
 
+
     preview.contentEditable =
-        enabled ? "true" : "false";
+        enabled
+            ? "true"
+            : "false";
+
 
     editFileButton.hidden =
         enabled;
@@ -538,8 +862,8 @@ function setEditing(enabled) {
 
 
 /* =========================================================
-Source Editor
-========================================================= */
+   Source Editor
+   ========================================================= */
 
 editor.addEventListener(
     "input",
@@ -549,7 +873,11 @@ editor.addEventListener(
             return;
         }
 
-        setDirty(true);
+
+        setDirty(
+            true
+        );
+
 
         updateEditor();
     }
@@ -557,24 +885,30 @@ editor.addEventListener(
 
 
 function updateEditor() {
+
     updateWordCount();
+
     renderMarkdown();
 }
 
 
 /* =========================================================
-Markdown → HTML
-========================================================= */
+   Markdown → HTML
+   ========================================================= */
 
 function renderMarkdown() {
+
     if (isUpdating) {
         return;
     }
 
+
     const text =
         editor.value;
 
+
     if (!text.trim()) {
+
         preview.innerHTML =
             '<div class="empty-preview">' +
             "Start writing..." +
@@ -583,18 +917,25 @@ function renderMarkdown() {
         return;
     }
 
-    isUpdating = true;
+
+    isUpdating =
+        true;
+
 
     preview.innerHTML =
-        marked.parse(text);
+        marked.parse(
+            text
+        );
 
-    isUpdating = false;
+
+    isUpdating =
+        false;
 }
 
 
 /* =========================================================
-Editor Panel Resizing
-========================================================= */
+   Editor Panel Resizing
+   ========================================================= */
 
 const editorContainer =
     document.querySelector(
@@ -614,7 +955,8 @@ const togglePanel =
 const DIVIDER_POSITION_KEY =
     "editorDividerPosition";
 
-const COLLAPSE_SIZE = 40;
+const COLLAPSE_SIZE =
+    40;
 
 let isDraggingDivider =
     false;
@@ -627,7 +969,10 @@ let editorPanelWidth =
     ) || 50;
 
 
-function setPanelWidth(percent) {
+function setPanelWidth(
+    percent
+) {
+
     editorPanelWidth =
         Math.max(
             0,
@@ -637,32 +982,48 @@ function setPanelWidth(percent) {
             )
         );
 
+
     storage.setStorage(
         DIVIDER_POSITION_KEY,
         editorPanelWidth
     );
 
-    if (editorPanelWidth <= 0) {
+
+    if (
+        editorPanelWidth <= 0
+    ) {
+
         collapseEditor();
+
         return;
     }
 
-    if (editorPanelWidth >= 100) {
+
+    if (
+        editorPanelWidth >= 100
+    ) {
+
         collapsePreview();
+
         return;
     }
+
 
     editorContainer.style.gridTemplateColumns =
         `calc(${editorPanelWidth}% - 2.5px) 5px calc(${100 - editorPanelWidth}% - 2.5px)`;
 
+
     editorDivider.style.display =
         "block";
+
 
     editor.style.display =
         "";
 
+
     preview.style.display =
         "";
+
 
     togglePanel.hidden =
         true;
@@ -670,6 +1031,7 @@ function setPanelWidth(percent) {
 
 
 function restoreDividerPosition() {
+
     const saved =
         Number(
             storage.getStorage(
@@ -677,35 +1039,49 @@ function restoreDividerPosition() {
             )
         );
 
+
     if (
         Number.isFinite(saved) &&
         saved > 0 &&
         saved < 100
     ) {
-        setPanelWidth(saved);
+
+        setPanelWidth(
+            saved
+        );
     }
 }
 
 
-function startDividerDrag(event) {
+function startDividerDrag(
+    event
+) {
+
     event.preventDefault();
 
-    isDraggingDivider = true;
+
+    isDraggingDivider =
+        true;
+
 
     editorDivider.classList.add(
         "dragging"
     );
 
+
     document.body.style.cursor =
         "col-resize";
 
+
     document.body.style.userSelect =
         "none";
+
 
     document.addEventListener(
         "mousemove",
         moveDivider
     );
+
 
     document.addEventListener(
         "mouseup",
@@ -714,47 +1090,64 @@ function startDividerDrag(event) {
 }
 
 
-function moveDivider(event) {
+function moveDivider(
+    event
+) {
+
     if (!isDraggingDivider) {
         return;
     }
 
+
     const rect =
         editorContainer.getBoundingClientRect();
+
 
     const x =
         event.clientX -
         rect.left;
 
+
     const percent =
         (x / rect.width) *
         100;
 
-    setPanelWidth(percent);
+
+    setPanelWidth(
+        percent
+    );
 }
 
 
 function stopDividerDrag() {
+
     if (!isDraggingDivider) {
         return;
     }
 
-    isDraggingDivider = false;
+
+    isDraggingDivider =
+        false;
+
 
     editorDivider.classList.remove(
         "dragging"
     );
 
+
     document.body.style.cursor =
         "";
 
+
     document.body.style.userSelect =
         "";
+
 
     document.removeEventListener(
         "mousemove",
         moveDivider
     );
+
 
     document.removeEventListener(
         "mouseup",
@@ -764,22 +1157,30 @@ function stopDividerDrag() {
 
 
 function collapseEditor() {
-    editorPanelWidth = 0;
+
+    editorPanelWidth =
+        0;
+
 
     editor.style.display =
         "none";
 
+
     editorDivider.style.display =
         "none";
+
 
     preview.style.display =
         "block";
 
+
     editorContainer.style.gridTemplateColumns =
         "1fr";
 
+
     togglePanel.textContent =
         "Open Raw";
+
 
     togglePanel.hidden =
         false;
@@ -787,22 +1188,30 @@ function collapseEditor() {
 
 
 function collapsePreview() {
-    editorPanelWidth = 100;
+
+    editorPanelWidth =
+        100;
+
 
     preview.style.display =
         "none";
 
+
     editorDivider.style.display =
         "none";
+
 
     editor.style.display =
         "block";
 
+
     editorContainer.style.gridTemplateColumns =
         "1fr";
 
+
     togglePanel.textContent =
         "Open Preview";
+
 
     togglePanel.hidden =
         false;
@@ -810,44 +1219,62 @@ function collapsePreview() {
 
 
 function fullscreenPreview() {
-    editorPanelWidth = 0;
+
+    editorPanelWidth =
+        0;
+
 
     editor.style.display =
         "none";
 
+
     editorDivider.style.display =
         "none";
 
+
     preview.style.display =
         "block";
+
 
     editorContainer.style.gridTemplateColumns =
         "1fr";
 
+
     togglePanel.textContent =
         "Open Raw";
+
 
     togglePanel.hidden =
         false;
 
-    setEditing(false);
+
+    setEditing(
+        false
+    );
 }
 
 
 function restoreSplit() {
-    editorPanelWidth = 50;
+
+    editorPanelWidth =
+        50;
+
 
     editor.style.display =
         "";
 
+
     preview.style.display =
         "";
+
 
     editorDivider.style.display =
         "block";
 
+
     editorContainer.style.gridTemplateColumns =
         "calc(50% - 2.5px) 5px calc(50% - 2.5px)";
+
 
     togglePanel.hidden =
         true;
@@ -859,6 +1286,7 @@ editorDivider.addEventListener(
     startDividerDrag
 );
 
+
 togglePanel.addEventListener(
     "click",
     restoreSplit
@@ -866,8 +1294,8 @@ togglePanel.addEventListener(
 
 
 /* =========================================================
-WYSIWYG Editing
-========================================================= */
+   WYSIWYG Editing
+   ========================================================= */
 
 preview.addEventListener(
     "input",
@@ -877,31 +1305,42 @@ preview.addEventListener(
             return;
         }
 
-        isUpdating = true;
+
+        isUpdating =
+            true;
+
 
         try {
+
             const markdown =
                 turndown.turndown(
                     preview
                 );
 
+
             editor.value =
                 markdown;
 
-            setDirty(true);
+
+            setDirty(
+                true
+            );
+
 
             updateWordCount();
 
         } finally {
-            isUpdating = false;
+
+            isUpdating =
+                false;
         }
     }
 );
 
 
 /* =========================================================
-Unsaved Changes Warning
-========================================================= */
+   Unsaved Changes Warning
+   ========================================================= */
 
 window.addEventListener(
     "beforeunload",
@@ -911,39 +1350,52 @@ window.addEventListener(
             return;
         }
 
+
         event.preventDefault();
 
-        event.returnValue = "";
+
+        event.returnValue =
+            "";
     }
 );
 
 
 /* =========================================================
-Word Count
-========================================================= */
+   Word Count
+   ========================================================= */
 
 function updateWordCount() {
+
     const text =
         editor.value.trim();
 
+
     if (!text) {
+
         wordCount.textContent =
             "0 words";
 
         return;
     }
 
+
     const words =
-        text.split(/\s+/).length;
+        text.split(
+            /\s+/
+        ).length;
+
 
     wordCount.textContent =
-        `${words} ${words === 1 ? "word" : "words"}`;
+        `${words} ${words === 1
+            ? "word"
+            : "words"
+        }`;
 }
 
 
 /* =========================================================
-Keyboard Shortcuts
-========================================================= */
+   Keyboard Shortcuts
+   ========================================================= */
 
 document.addEventListener(
     "keydown",
@@ -955,19 +1407,24 @@ document.addEventListener(
             event.key.toLowerCase() ===
             "s"
         ) {
+
             event.preventDefault();
+
 
             if (
                 currentFileHandle &&
                 typeof currentFileHandle.createWritable ===
                 "function"
             ) {
+
                 saveFileButton.click();
 
             } else {
+
                 saveAsFileButton.click();
             }
         }
+
 
         if (
             (event.ctrlKey ||
@@ -975,7 +1432,9 @@ document.addEventListener(
             event.key.toLowerCase() ===
             "o"
         ) {
+
             event.preventDefault();
+
 
             openFileButton.click();
         }
@@ -984,75 +1443,106 @@ document.addEventListener(
 
 
 /* =========================================================
-Service Worker
-========================================================= */
+   Service Worker
+   ========================================================= */
 
-if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register(
-        "./sw.js"
-    ).catch(error => {
-        console.error(
-            "Service worker registration failed:",
-            error
+if (
+    "serviceWorker" in navigator
+) {
+
+    navigator.serviceWorker
+        .register(
+            "./sw.js"
+        )
+        .catch(
+            error => {
+
+                console.error(
+                    "Service worker registration failed:",
+                    error
+                );
+            }
         );
-    });
 }
 
 
 /* =========================================================
-Startup URL Handling
-========================================================= */
+   Startup URL Handling
+   ========================================================= */
 
 async function handleStartup() {
+
     const params =
         new URLSearchParams(
             window.location.search
         );
 
+
     const shouldRestore =
-        params.get("restore") === "1";
+        params.get(
+            "restore"
+        ) === "1";
+
 
     const filePath =
-        params.get("file-path");
+        params.get(
+            "file-path"
+        );
+
 
     /*
      * file-path takes priority.
      */
+
     if (filePath) {
+
         await openFileFromPath(
             filePath
         );
 
+
         removeStartupParams();
+
 
         return;
     }
+
 
     /*
      * Explicit restore request.
      */
+
     if (shouldRestore) {
+
         await openLastFile();
 
+
         removeStartupParams();
+
 
         return;
     }
 
+
     /*
      * Normal editor startup.
      */
+
     checkLastFile();
 }
 
 
 function removeStartupParams() {
+
     const url =
         new URL(
             window.location.href
         );
 
-    url.search = "";
+
+    url.search =
+        "";
+
 
     window.history.replaceState(
         {},
@@ -1064,94 +1554,131 @@ function removeStartupParams() {
 
 
 /* =========================================================
-Open File From URL / Path
-========================================================= */
+   Open File From URL / Path
+   ========================================================= */
 
-async function openFileFromPath(filePath) {
+async function openFileFromPath(
+    filePath
+) {
+
     try {
+
         status.textContent =
             "Loading...";
 
+
         const result =
             await storage.openFileFromPath(
-                filePath
+                filePath,
+                MARKDOWN_STORAGE_CONFIG
             );
+
 
         if (!result) {
             return;
         }
 
+
         /*
          * Local file opened through
          * the File System Access API.
          */
+
         if (
             result.type === "local" &&
             result.handle
         ) {
+
             currentFileHandle =
                 result.handle;
+
 
             editor.value =
                 result.contents;
 
+
             fileName.textContent =
                 result.name;
+
 
             saveFileButton.disabled =
                 true;
 
+
             saveAsFileButton.disabled =
                 false;
 
-            setDirty(false);
+
+            setDirty(
+                false
+            );
+
 
             updateEditor();
 
+
             fullscreenPreview();
+
 
             status.textContent =
                 "Opened local file";
 
+
             return;
         }
+
 
         /*
          * Remote file.
          */
+
         if (
-            result.type === "remote"
+            result.type ===
+            "remote"
         ) {
+
             editor.value =
                 result.contents;
+
 
             currentFileHandle =
                 null;
 
+
             fileName.textContent =
                 result.name;
+
 
             saveFileButton.disabled =
                 true;
 
+
             saveAsFileButton.disabled =
                 false;
 
-            setDirty(false);
+
+            setDirty(
+                false
+            );
+
 
             updateEditor();
 
+
             fullscreenPreview();
+
 
             status.textContent =
                 "Opened remote file";
         }
 
     } catch (error) {
+
         console.error(
             "Failed to open file:",
             error
         );
+
 
         status.textContent =
             "Failed to open file";
@@ -1160,10 +1687,12 @@ async function openFileFromPath(filePath) {
 
 
 /* =========================================================
-PWA File Handler
-========================================================= */
+   PWA File Handler
+   ========================================================= */
 
-if ("launchQueue" in window) {
+if (
+    "launchQueue" in window
+) {
 
     window.launchQueue.setConsumer(
         async launchParams => {
@@ -1172,36 +1701,46 @@ if ("launchQueue" in window) {
                 !launchParams.files ||
                 !launchParams.files.length
             ) {
+
                 return;
             }
+
 
             const handle =
                 launchParams.files[0];
 
+
             try {
+
                 /*
                  * Make sure this is
                  * actually a file.
                  */
+
                 if (
                     handle.kind !==
                     "file"
                 ) {
+
                     return;
                 }
+
 
                 await loadFile(
                     handle
                 );
 
+
                 status.textContent =
                     "Opened file";
 
             } catch (error) {
+
                 console.error(
                     "Failed to open launched file:",
                     error
                 );
+
 
                 status.textContent =
                     "Failed to open file";
@@ -1212,9 +1751,10 @@ if ("launchQueue" in window) {
 
 
 /* =========================================================
-Startup
-========================================================= */
+   Startup
+   ========================================================= */
 
 handleStartup();
 
 restoreDividerPosition();
+
