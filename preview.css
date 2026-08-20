@@ -16,6 +16,14 @@
     outline: none;
 }
 
+
+
+
+#preview.ctrl-held a {
+    cursor: pointer !important;
+}
+
+
 .preview h1,
 .preview h2,
 .preview h3,

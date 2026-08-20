@@ -378,6 +378,66 @@ editFileButton.addEventListener(
 );
 
 
+
+
+
+
+
+/* -----------------------------
+   Ctrl + Click Links in Preview
+----------------------------- */
+
+preview.addEventListener("click", event => {
+    const link =
+        event.target.closest("a");
+
+    if (!link) {
+        return;
+    }
+
+    if (event.ctrlKey || event.metaKey) {
+        event.preventDefault();
+
+        window.open(
+            link.href,
+            "_blank",
+            "noopener,noreferrer"
+        );
+    }
+});
+
+
+/* -----------------------------
+   Ctrl + Hover Link Cursor
+----------------------------- */
+
+let ctrlHeld = false;
+
+document.addEventListener("keydown", event => {
+    if (event.key === "Control" || event.key === "Meta") {
+        ctrlHeld = true;
+        preview.classList.add("ctrl-held");
+    }
+});
+
+document.addEventListener("keyup", event => {
+    if (event.key === "Control" || event.key === "Meta") {
+        ctrlHeld = false;
+        preview.classList.remove("ctrl-held");
+    }
+});
+
+window.addEventListener("blur", () => {
+    ctrlHeld = false;
+    preview.classList.remove("ctrl-held");
+});
+
+
+
+
+
+
+
 /* =========================================================
    Load File
    ========================================================= */
