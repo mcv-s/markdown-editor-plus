@@ -126,6 +126,13 @@ const fileName =
         "fileName"
     );
 
+const isEditorPage =
+    window.location.pathname
+        .split("/")
+        .pop()
+        .toLowerCase() ===
+    "editor.html";
+
 const status =
     document.getElementById(
         "status"
@@ -140,6 +147,23 @@ const preview =
     document.getElementById(
         "preview"
     );
+
+
+function updateDocumentTitle() {
+
+    if (
+        !isEditorPage ||
+        !fileName.textContent ||
+        fileName.textContent ===
+        "Untitled"
+    ) {
+        return;
+    }
+
+
+    document.title =
+        `${fileName.textContent} - MDE+`;
+}
 
 
 /* =========================================================
@@ -696,6 +720,9 @@ saveFileButton.addEventListener(
                 status.textContent =
                     "Saved";
 
+
+                updateDocumentTitle();
+
             } catch (error) {
 
                 console.error(
@@ -754,6 +781,9 @@ function downloadMarkdown() {
 
     status.textContent =
         "Downloaded";
+
+
+    updateDocumentTitle();
 }
 
 
@@ -826,6 +856,9 @@ saveAsFileButton.addEventListener(
 
                 status.textContent =
                     "Saved";
+
+
+                updateDocumentTitle();
 
             } catch (error) {
 
