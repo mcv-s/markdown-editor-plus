@@ -86,6 +86,46 @@ const MARKDOWN_STORAGE_CONFIG = {
         true
 };
 
+const RECENT_FILES_KEY =
+    "markdown-editor-recent-files";
+
+const MAX_RECENT_FILES =
+    4;
+
+
+function recordRecentFile(name) {
+
+    if (!name || name === "Untitled") {
+        return;
+    }
+
+
+    let recentFiles = [];
+
+    try {
+        recentFiles = JSON.parse(
+            localStorage.getItem(RECENT_FILES_KEY) ||
+            "[]"
+        );
+    } catch (error) {
+        console.warn("Could not read recent files:", error);
+    }
+
+
+    recentFiles = [
+        name,
+        ...recentFiles.filter(
+            recentName => recentName !== name
+        )
+    ].slice(0, MAX_RECENT_FILES);
+
+
+    localStorage.setItem(
+        RECENT_FILES_KEY,
+        JSON.stringify(recentFiles)
+    );
+}
+
 
 /* =========================================================
    DOM Elements
@@ -491,6 +531,8 @@ async function loadFile(
             MARKDOWN_STORAGE_CONFIG
         );
 
+    recordRecentFile(fileName.textContent);
+
 
     saveFileButton.disabled =
         true;
@@ -561,6 +603,8 @@ async function loadFallbackFile(
             MARKDOWN_STORAGE_CONFIG
         );
 
+    recordRecentFile(fileName.textContent);
+
 
     saveFileButton.disabled =
         true;
@@ -591,6 +635,19 @@ async function loadFallbackFile(
    ========================================================= */
 
 async function openLastFile() {
+
+    if (
+        new URLSearchParams(window.location.search).get("fallback") ===
+        "1"
+    ) {
+        const fallbackData =
+            JSON.parse(localStorage.getItem("markdown-editor-last-file") || "null");
+
+        if (fallbackData) {
+            await loadFallbackFile(fallbackData);
+            return;
+        }
+    }
 
     if (
         !storage.supportsFileSystemAccess
@@ -1693,6 +1750,8 @@ async function openFileFromPath(
             fileName.textContent =
                 result.name;
 
+            recordRecentFile(fileName.textContent);
+
 
             saveFileButton.disabled =
                 true;
@@ -1740,6 +1799,8 @@ async function openFileFromPath(
 
             fileName.textContent =
                 result.name;
+
+            recordRecentFile(fileName.textContent);
 
 
             saveFileButton.disabled =

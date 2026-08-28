@@ -114,3 +114,43 @@ h1 {
     display: block;
 }
 
+.welcome-actions {
+    position: relative;
+}
+
+.recent-files-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    z-index: 10;
+    min-width: 220px;
+    padding: 8px;
+    transform: translateX(-50%);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
+}
+
+.recent-files-dropdown ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.recent-files-dropdown button {
+    width: 100%;
+    padding: 8px 10px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.recent-files-dropdown button:hover {
+    border-radius: 4px;
+    background: var(--button-hover);
+    color: var(--text);
+}
