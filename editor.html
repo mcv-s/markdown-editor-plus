@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="preview.css">
     <link rel="manifest" href="manifest.json">
 
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
     <meta name="theme-color" content="#1e1e1e">
 </head>
 
@@ -39,17 +41,20 @@
         </a>
 
         <div class="toolbar-actions">
-            <br><hr><br>
-            <button id="openLastFile"> Open Last File </button>
-            <button id="openFile">Open</button>
-            <button id="saveFile" disabled>Save</button>
-            <button id="saveAsFile" disabled>Save As</button>
-            <br><hr><br>
-            <button id="editFile" hidden>Edit this File</button>
+
+            <br>
+            <hr><br>
+            <button id="openLastFile" isIcon data-tooltip="Open Last File"><i class="ph ph-upload"></i></button>
+            <button id="openFile" isIcon data-tooltip="Open File"><i class="ph ph-file-plus"></i></button>
+            <button id="saveFile" isIcon disabled data-tooltip="Save"><i class="ph ph-floppy-disk"></i></button>
+            <button id="saveAsFile" isIcon disabled data-tooltip="Save As"><i class="ph ph-file"></i></button>
+            <br>
+            <hr><br>
+            <button id="editFile" isIcon hidden data-tooltip="Edit File"><i class="ph ph-pencil"></i></button>
 
 
 
-            <button id="togglePanel" hidden></button>
+            <button id="togglePanel" hidden isIcon><i class="ph ph-sidebar-simple"></i></button>
         </div>
 
         <div class="preview-margin-box">
@@ -90,6 +95,8 @@
 
     <script src="storage_module.js"></script>
     <script src="program.js"></script>
+
+    <script src="tooltips.js"></script>
 
 </body>
 

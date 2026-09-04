@@ -1306,102 +1306,70 @@ function stopDividerDrag() {
 }
 
 
-function collapseEditor() {
-
-    editorPanelWidth =
-        0;
 
 
-    editor.style.display =
-        "none";
 
 
-    editorDivider.style.display =
-        "none";
 
 
-    preview.style.display =
-        "block";
-
-
-    editorContainer.style.gridTemplateColumns =
-        "1fr";
-
-
-    togglePanel.textContent =
-        "Open Raw";
-
-
-    togglePanel.hidden =
-        false;
+function setTogglePanel(label) {
+    togglePanel.querySelector("i").className = "ph ph-sidebar-simple";
+    togglePanel.dataset.tooltip = label;
+    togglePanel.hidden = false;
 }
 
+
+
+
+
+
+function collapseEditor() {
+    editorPanelWidth = 0;
+
+    editor.style.display = "none";
+    editorDivider.style.display = "none";
+    preview.style.display = "block";
+
+    editorContainer.style.gridTemplateColumns = "1fr";
+
+    setTogglePanel("Open Raw");
+}
 
 function collapsePreview() {
+    editorPanelWidth = 100;
 
-    editorPanelWidth =
-        100;
+    preview.style.display = "none";
+    editorDivider.style.display = "none";
+    editor.style.display = "block";
 
+    editorContainer.style.gridTemplateColumns = "1fr";
 
-    preview.style.display =
-        "none";
-
-
-    editorDivider.style.display =
-        "none";
-
-
-    editor.style.display =
-        "block";
-
-
-    editorContainer.style.gridTemplateColumns =
-        "1fr";
-
-
-    togglePanel.textContent =
-        "Open Preview";
-
-
-    togglePanel.hidden =
-        false;
+    setTogglePanel("Open Preview");
 }
+
 
 
 function fullscreenPreview() {
+    editorPanelWidth = 0;
 
-    editorPanelWidth =
-        0;
+    editor.style.display = "none";
+    editorDivider.style.display = "none";
+    preview.style.display = "block";
 
+    editorContainer.style.gridTemplateColumns = "1fr";
 
-    editor.style.display =
-        "none";
+    setTogglePanel("Open Raw");
 
-
-    editorDivider.style.display =
-        "none";
-
-
-    preview.style.display =
-        "block";
-
-
-    editorContainer.style.gridTemplateColumns =
-        "1fr";
-
-
-    togglePanel.textContent =
-        "Open Raw";
-
-
-    togglePanel.hidden =
-        false;
-
-
-    setEditing(
-        false
-    );
+    setEditing(false);
 }
+
+
+
+
+
+
+
+
 
 
 function restoreSplit() {
