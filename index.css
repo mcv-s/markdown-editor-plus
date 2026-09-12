@@ -37,6 +37,11 @@ h1 {
 }
 
 
+
+
+
+
+
 /* Theme button */
 
 .theme-toggle {
@@ -113,6 +118,18 @@ h1 {
 :root[data-theme="light"] .moon-icon {
     display: block;
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 .welcome-actions {
     position: relative;
