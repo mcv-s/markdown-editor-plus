@@ -17,7 +17,7 @@
     body {
         display: block;
         color: #171717;
-        font-family: Georgia, "Times New Roman", serif;
+        font-family: 'Times New Roman', Times, serif;
     }
 
     .toolbar,
