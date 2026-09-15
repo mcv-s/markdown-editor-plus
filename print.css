@@ -1,0 +1,145 @@
+@page {
+    margin: 0.7in;
+}
+
+@media print {
+    :root {
+        color-scheme: light;
+    }
+
+    html,
+    body {
+        width: auto;
+        height: auto;
+        background: #ffffff;
+    }
+
+    body {
+        display: block;
+        color: #171717;
+        font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .toolbar,
+    #editor,
+    .editor-divider,
+    .status-bar {
+        display: none !important;
+    }
+
+    .editor-container {
+        display: block;
+        min-height: 0;
+    }
+
+    #preview.preview {
+        display: block !important;
+        width: 100%;
+        min-height: 0;
+        padding: 0 !important;
+        overflow: visible;
+        border: 0;
+        background: #ffffff;
+        color: #171717;
+        font-size: 11pt;
+        line-height: 1.55;
+    }
+
+    #preview .empty-preview {
+        color: #171717;
+    }
+
+    #preview h1,
+    #preview h2,
+    #preview h3,
+    #preview h4,
+    #preview h5,
+    #preview h6 {
+        color: #111111;
+        break-after: avoid;
+    }
+
+    #preview h1 {
+        margin-top: 0;
+        font-size: 25pt;
+        line-height: 1.15;
+    }
+
+    #preview h2 {
+        margin-top: 1.6em;
+        font-size: 18pt;
+        line-height: 1.2;
+    }
+
+    #preview h3 {
+        font-size: 14pt;
+    }
+
+    #preview h1,
+    #preview h2 {
+        border-color: #777777;
+    }
+
+    #preview p,
+    #preview ul,
+    #preview ol,
+    #preview blockquote {
+        orphans: 3;
+        widows: 3;
+    }
+
+    #preview a {
+        color: #174a7c;
+        text-decoration: underline;
+    }
+
+    #preview blockquote {
+        border-left-color: #777777;
+        color: #333333;
+        break-inside: avoid;
+    }
+
+    #preview code,
+    #preview pre {
+        color: #171717;
+        background: #f0f0f0;
+        border: 1px solid #b8b8b8;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    #preview pre {
+        overflow: visible;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        break-inside: avoid;
+    }
+
+    #preview pre code {
+        border: 0;
+    }
+
+    #preview table {
+        break-inside: avoid;
+    }
+
+    #preview th,
+    #preview td {
+        border-color: #888888;
+    }
+
+    #preview th {
+        background: #e8e8e8;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    #preview img {
+        max-height: 9in;
+        break-inside: avoid;
+    }
+
+    #preview hr {
+        border-top-color: #888888;
+    }
+}
