@@ -394,6 +394,27 @@ openFileButton.addEventListener(
                     handle
                 );
 
+
+                /*
+                * Add to recent files
+                */
+
+                const recentFiles =
+                    await getRecentFiles();
+
+                await saveRecentFiles([
+                    {
+                        name: handle.name,
+                        handle
+                    },
+                    ...recentFiles.filter(
+                        file =>
+                            file.name !== handle.name
+                    )
+                ]);
+
+
+
                 return;
             }
 
@@ -1596,6 +1617,12 @@ async function handleStartup() {
         );
 
 
+    const shouldLoadSavedFile =
+        params.get(
+            "load-saved-file"
+        ) === "1";
+
+
     const shouldRestore =
         params.get(
             "restore"
@@ -1621,6 +1648,22 @@ async function handleStartup() {
 
         removeStartupParams();
 
+        return;
+    }
+
+
+    /*
+     * Explicit saved-file request.
+     *
+     * This is used by drag & drop.
+     */
+
+    if (shouldLoadSavedFile) {
+
+        await openLastFile();
+
+
+        removeStartupParams();
 
         return;
     }
@@ -1637,7 +1680,6 @@ async function handleStartup() {
 
         removeStartupParams();
 
-
         return;
     }
 
@@ -1648,7 +1690,6 @@ async function handleStartup() {
 
     checkLastFile();
 }
-
 
 function removeStartupParams() {
 
@@ -1808,6 +1849,17 @@ async function openFileFromPath(
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
 /* =========================================================
    PWA File Handler
    ========================================================= */
@@ -1851,6 +1903,25 @@ if (
                 await loadFile(
                     handle
                 );
+
+
+                /*
+                * Add to recent files
+                */
+
+                const recentFiles =
+                    await getRecentFiles();
+
+                await saveRecentFiles([
+                    {
+                        name: handle.name,
+                        handle
+                    },
+                    ...recentFiles.filter(
+                        file =>
+                            file.name !== handle.name
+                    )
+                ]);
 
 
                 status.textContent =
